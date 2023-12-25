@@ -1,0 +1,150 @@
+package conv.compute
+
+import config.Config.imageType
+import conv.dataGenerate._
+import spinal.core._
+import spinal.lib._
+import wa._
+
+
+class Conv(convConfig: ConvConfig) extends Component {
+    val io = new Bundle {
+        val sData = slave Stream UInt(convConfig.FEATURE_S_DATA_WIDTH bits)
+        val sFeatureFirstLayerData = slave Stream UInt((if (imageType.dataType == imageType.rgb) 4 * convConfig.DATA_WIDTH else 1 * convConfig.DATA_WIDTH) bits)
+        val mData = master Stream UInt(convConfig.FEATURE_M_DATA_WIDTH bits)
+        //        val start = in Bool()
+        val instruction = in Vec(Bits(32 bits), 5)
+        val control = in Bits (4 bits)
+        val state = out Bits (4 bits)
+
+        val dmaReadValid = out Bool()
+        val dmaFirstLayerReadValid = out Bool()
+        val dmaWriteValid = out Bool()
+
+        val introut = in Bool()
+        val last = out Bool()
+    }
+    noIoPrefix()
+
+    val convState = ConvState(convConfig)
+    convState.io.control <> io.control
+    convState.io.state <> io.state
+
+    val para = Reg(Bool()) init False setWhen (convState.io.sign === CONV_STATE.PARA_SIGN) clearWhen (convState.io.sign =/= CONV_STATE.PARA_SIGN)
+    val compute = Reg(Bool()) init False setWhen (convState.io.sign === CONV_STATE.COMPUTE_SIGN) clearWhen (convState.io.sign =/= CONV_STATE.COMPUTE_SIGN)
+
+    val paraInstruction     = io.instruction.reverse.reduceRight(_ ## _)
+    val computeInstruction  = io.instruction.reverse.reduceRight(_ ## _)
+
+    //    val paraInstructionReg = Reg(Bits(paraInstruction.getWidth bits)) init 0
+//    val computeInstructionReg = Reg(Bits(computeInstruction.getWidth bits)) init 0
+    val computeInstructionReg = RegNext(computeInstruction) init 0
+
+    //    when(convState.io.sign === CONV_STATE.PARA_SIGN) {
+    //        paraInstructionReg := paraInstruction
+    //        computeInstructionReg := computeInstructionReg
+    //    } elsewhen (convState.io.sign === CONV_STATE.COMPUTE_SIGN) {
+    //        paraInstructionReg := paraInstructionReg
+    //        computeInstructionReg := computeInstruction
+    //    } otherwise {
+    //        paraInstructionReg := paraInstructionReg
+    //        computeInstructionReg := computeInstructionReg
+    //    }
+
+    val convCompute = new ConvCompute(convConfig)
+    convCompute.io.softReset := Delay(convState.io.softReset, 2)
+    convCompute.io.startPa := Delay(para, 3)
+    convCompute.io.startCu := Delay(compute, 3)
+    convCompute.io.last <> io.last
+
+    convCompute.io.sFeatureFirstLayerData <> io.sFeatureFirstLayerData
+
+    convCompute.io.channelIn := computeInstructionReg(CONV_STATE.CHANNEL_IN).asUInt.resized
+    convCompute.io.channelOut := computeInstructionReg(CONV_STATE.CHANNEL_OUT).asUInt.resized
+    convCompute.io.rowNumIn := computeInstructionReg(CONV_STATE.ROW_NUM_IN).asUInt.resized
+    convCompute.io.colNumIn := computeInstructionReg(CONV_STATE.COL_NUM_IN).asUInt.resized
+    convCompute.io.enPadding := computeInstructionReg(CONV_STATE.EN_PADDING).asBool
+    convCompute.io.enActivation := computeInstructionReg(CONV_STATE.EN_ACTIVATION).asBool
+    convCompute.io.zeroDara := computeInstructionReg(CONV_STATE.Z1).resized
+    convCompute.io.zeroNum := computeInstructionReg(CONV_STATE.Z1_NUM).asUInt.resized
+    convCompute.io.quanZeroData := computeInstructionReg(CONV_STATE.Z3).asUInt.resized
+    convCompute.io.convType := computeInstructionReg(CONV_STATE.CONV_TYPE).resized
+    convCompute.io.enStride := computeInstructionReg(CONV_STATE.EN_STRIDE).asBool
+    convCompute.io.firstLayer := computeInstructionReg(CONV_STATE.FIRST_LAYER).asBool           //从指令中确定是否是第一层
+    convCompute.io.amendReg := computeInstructionReg(CONV_STATE.AMEND)
+
+//    convCompute.io.weightNum := paraInstructionReg(CONV_STATE.WEIGHT_NUM).asUInt.resized
+        convCompute.io.weightNum := computeInstructionReg(CONV_STATE.WEIGHT_NUM).asUInt.resized
+//    convCompute.io.quanNum := paraInstructionReg(CONV_STATE.QUAN_NUM).asUInt.resized
+        convCompute.io.quanNum := computeInstructionReg(CONV_STATE.QUAN_NUM).asUInt.resized
+
+
+    (convState.io.dmaReadValid & (!computeInstructionReg(CONV_STATE.FIRST_LAYER).asBool)) <> io.dmaReadValid
+    (convState.io.dmaReadValid & (computeInstructionReg(CONV_STATE.FIRST_LAYER).asBool)) <> io.dmaFirstLayerReadValid
+    convState.io.dmaWriteValid <> io.dmaWriteValid
+
+
+    val writeComplete = Reg(Bool()) init (False)
+    writeComplete.setWhen(io.introut)
+    writeComplete.clearWhen(io.control === CONV_STATE.END_IRQ)
+
+    val computeComplete = Reg(Bool()) init (False)
+    computeComplete.setWhen(convCompute.io.computeComplete)
+    computeComplete.clearWhen(io.control === CONV_STATE.END_IRQ)
+
+    when(convCompute.io.copyWeightDone) {
+        convState.io.complete := CONV_STATE.END_PA
+    } elsewhen (computeComplete && writeComplete) {
+        convState.io.complete := CONV_STATE.END_CU
+    } otherwise {
+        convState.io.complete := 0
+    }
+
+    val dest = Reg(Bits(2 bits)) init 3 addAttribute  ("max_fanout = \"10\"")
+    when(io.control === CONV_STATE.START_PA) {
+        dest := 0
+    } elsewhen (io.control === CONV_STATE.START_CU) {
+        dest := 1
+    } otherwise {
+        dest := dest
+    }
+
+    when(dest === 0) {      // load weigth
+        io.sData <> convCompute.io.sParaData
+        convCompute.io.sFeatureData.valid := False
+        convCompute.io.sFeatureData.payload := 0
+
+    } elsewhen (dest === 1) {// load feature
+        io.sData <> convCompute.io.sFeatureData
+        convCompute.io.sParaData.valid := False
+        convCompute.io.sParaData.payload := 0
+
+    } otherwise {
+        io.sData.ready := False
+        convCompute.io.sFeatureData.valid := False
+        convCompute.io.sFeatureData.payload := 0
+        convCompute.io.sParaData.valid := False
+        convCompute.io.sParaData.payload := 0
+
+    }
+    io.mData <> convCompute.io.mFeatureData
+
+}
+
+
+object Conv {
+    def main(args: Array[String]): Unit = {
+        SpinalConfig(removePruned = true).generateVerilog(new Conv(ConvConfig(
+            DATA_WIDTH = 8,
+            COMPUTE_CHANNEL_IN_NUM = 16,
+            COMPUTE_CHANNEL_OUT_NUM = 16,
+            CHANNEL_WIDTH = 12,
+            WEIGHT_DEPTH = 8192,
+            QUAN_DEPTH = 256,
+            FEATURE = 640,
+            FEATURE_RAM_DEPTH = 8192,
+            ZERO_NUM = 1
+        )))
+        //DATA_WIDTH: Int, COMPUTE_CHANNEL_IN_NUM: Int, COMPUTE_CHANNEL_OUT_NUM: Int, CHANNEL_WIDTH: Int, WEIGHT_DEPTH: Int, QUAN_DEPTH: Int, FEATURE: Int, FEATURE_RAM_DEPTH: Int, ZERO_NUM: Int
+    }
+}

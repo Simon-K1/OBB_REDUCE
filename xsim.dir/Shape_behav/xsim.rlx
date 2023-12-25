@@ -1,0 +1,12 @@
+
+{ 
+    crc :  10743868388572816653  , 
+    ccp_crc :  0  , 
+    cmdline : " --incr --debug typical --relax --mt 2 -L xil_defaultlib -L xbip_utils_v3_0_10 -L xbip_pipe_v3_0_6 -L xbip_bram18k_v3_0_6 -L mult_gen_v12_0_17 -L c_reg_fd_v12_0_6 -L xbip_dsp48_wrapper_v3_0_4 -L xbip_dsp48_addsub_v3_0_6 -L xbip_addsub_v3_0_6 -L c_addsub_v12_0_14 -L unisims_ver -L unimacro_ver -L secureip -L xpm --snapshot Shape_behav xil_defaultlib.Shape xil_defaultlib.glbl -dll" , 
+    buildDate : "Oct 19 2021" , 
+    buildTime : "03:16:22" , 
+    linkCmd : "C:\\Xilinx\\Vivado\\2021.2\\data\\..\\tps\\mingw\\6.2.0\\win64.o\\nt\\bin\\gcc.exe -Wa,-W  -DNT  -O -shared -Wl,--exclude-symbols,libhsimengine_NULL_THUNK_DATA -Wl,--stack,104857600 -o \"xsim.dir/Shape_behav/xsimk.dll\"   \"xsim.dir/Shape_behav/obj/xsim_0.win64.obj\" \"xsim.dir/Shape_behav/obj/xsim_1.win64.obj\" \"xsim.dir/Shape_behav/obj/xsim_2.win64.obj\" \"xsim.dir/Shape_behav/obj/xsim_3.win64.obj\" \"xsim.dir/Shape_behav/obj/xsim_4.win64.obj\" \"xsim.dir/Shape_behav/obj/xsim_5.win64.obj\" \"xsim.dir/Shape_behav/obj/xsim_6.win64.obj\" \"xsim.dir/Shape_behav/obj/xsim_7.win64.obj\" -L\"C:\\Xilinx\\Vivado\\2021.2\\lib\\win64.o\" -lrdi_simulator_kernel   -lrdi_simbridge_kernel" , 
+    aggregate_nets : 
+    [ 
+    ] 
+} 

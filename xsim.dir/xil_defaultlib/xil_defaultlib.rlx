@@ -1,0 +1,12 @@
+0.7
+2020.2
+Oct 19 2021
+03:16:22
+C:/Users/MrQi_/Desktop/laboratory_projects/first_project/SpinalHDL_CNN_Accelerator_yolo/simWorkspace/Shape/xsim/Shape_xsim.gen/sources_1/ip/addAdd/sim/addAdd.vhd,1699176373,vhdl,,,,addadd,,,,,,,,
+C:/Users/MrQi_/Desktop/laboratory_projects/first_project/SpinalHDL_CNN_Accelerator_yolo/simWorkspace/Shape/xsim/Shape_xsim.gen/sources_1/ip/addAdd64_64/sim/addAdd64_64.vhd,1699176373,vhdl,,,,addadd64_64,,,,,,,,
+C:/Users/MrQi_/Desktop/laboratory_projects/first_project/SpinalHDL_CNN_Accelerator_yolo/simWorkspace/Shape/xsim/Shape_xsim.gen/sources_1/ip/addMul/sim/addMul.vhd,1699176373,vhdl,,,,addmul,,,,,,,,
+C:/Users/MrQi_/Desktop/laboratory_projects/first_project/SpinalHDL_CNN_Accelerator_yolo/simWorkspace/Shape/xsim/Shape_xsim.gen/sources_1/ip/concatAdd/sim/concatAdd.vhd,1699176373,vhdl,,,,concatadd,,,,,,,,
+C:/Users/MrQi_/Desktop/laboratory_projects/first_project/SpinalHDL_CNN_Accelerator_yolo/simWorkspace/Shape/xsim/Shape_xsim.gen/sources_1/ip/concatMul/sim/concatMul.vhd,1699176373,vhdl,,,,concatmul,,,,,,,,
+C:/Users/MrQi_/Desktop/laboratory_projects/first_project/SpinalHDL_CNN_Accelerator_yolo/simWorkspace/Shape/xsim/Shape_xsim.gen/sources_1/ip/shapeCount1/sim/shapeCount1.vhd,1699176373,vhdl,,,,shapecount1,,,,,,,,
+C:/Users/MrQi_/Desktop/laboratory_projects/first_project/SpinalHDL_CNN_Accelerator_yolo/simWorkspace/Shape/xsim/Shape_xsim.sim/sim_1/behav/xsim/glbl.v,1634335545,verilog,,,,glbl,,,,,,,,
+C:/Users/MrQi_/Desktop/laboratory_projects/first_project/SpinalHDL_CNN_Accelerator_yolo/simWorkspace/Shape/xsim/Shape_xsim.srcs/sources_1/imports/job_1/Shape.v,1699176364,verilog,,,,Add;AddAdd_1;AddScale;Concat;ConcatScale;ConcatZero;MaxPooling;Shape;ShapeState;Split;StreamFifo;StreamFifo_1;StreamFifo_4;UpSampling;WaStreamDemux;WaStreamFifoPipe;WaStreamFifoPipe_1;WaStreamFifoPipe_2;WaStreamMux,,,,,,,,
