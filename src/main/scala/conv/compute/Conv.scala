@@ -33,11 +33,11 @@ class Conv(convConfig: ConvConfig) extends Component {
     val para = Reg(Bool()) init False setWhen (convState.io.sign === CONV_STATE.PARA_SIGN) clearWhen (convState.io.sign =/= CONV_STATE.PARA_SIGN)
     val compute = Reg(Bool()) init False setWhen (convState.io.sign === CONV_STATE.COMPUTE_SIGN) clearWhen (convState.io.sign =/= CONV_STATE.COMPUTE_SIGN)
 
-    val paraInstruction     = io.instruction.reverse.reduceRight(_ ## _)
-    val computeInstruction  = io.instruction.reverse.reduceRight(_ ## _)
+    val paraInstruction = io.instruction.reverse.reduceRight(_ ## _)
+    val computeInstruction = io.instruction.reverse.reduceRight(_ ## _)
 
     //    val paraInstructionReg = Reg(Bits(paraInstruction.getWidth bits)) init 0
-//    val computeInstructionReg = Reg(Bits(computeInstruction.getWidth bits)) init 0
+    //    val computeInstructionReg = Reg(Bits(computeInstruction.getWidth bits)) init 0
     val computeInstructionReg = RegNext(computeInstruction) init 0
 
     //    when(convState.io.sign === CONV_STATE.PARA_SIGN) {
@@ -70,13 +70,15 @@ class Conv(convConfig: ConvConfig) extends Component {
     convCompute.io.quanZeroData := computeInstructionReg(CONV_STATE.Z3).asUInt.resized
     convCompute.io.convType := computeInstructionReg(CONV_STATE.CONV_TYPE).resized
     convCompute.io.enStride := computeInstructionReg(CONV_STATE.EN_STRIDE).asBool
-    convCompute.io.firstLayer := computeInstructionReg(CONV_STATE.FIRST_LAYER).asBool           //从指令中确定是否是第一层
+    convCompute.io.firstLayer := computeInstructionReg(CONV_STATE.FIRST_LAYER).asBool
     convCompute.io.amendReg := computeInstructionReg(CONV_STATE.AMEND)
 
-//    convCompute.io.weightNum := paraInstructionReg(CONV_STATE.WEIGHT_NUM).asUInt.resized
-        convCompute.io.weightNum := computeInstructionReg(CONV_STATE.WEIGHT_NUM).asUInt.resized
-//    convCompute.io.quanNum := paraInstructionReg(CONV_STATE.QUAN_NUM).asUInt.resized
-        convCompute.io.quanNum := computeInstructionReg(CONV_STATE.QUAN_NUM).asUInt.resized
+    convCompute.io.enArrange := computeInstructionReg(CONV_STATE.EN_ARRANGE).asBool
+
+    //    convCompute.io.weightNum := paraInstructionReg(CONV_STATE.WEIGHT_NUM).asUInt.resized
+    convCompute.io.weightNum := computeInstructionReg(CONV_STATE.WEIGHT_NUM).asUInt.resized
+    //    convCompute.io.quanNum := paraInstructionReg(CONV_STATE.QUAN_NUM).asUInt.resized
+    convCompute.io.quanNum := computeInstructionReg(CONV_STATE.QUAN_NUM).asUInt.resized
 
 
     (convState.io.dmaReadValid & (!computeInstructionReg(CONV_STATE.FIRST_LAYER).asBool)) <> io.dmaReadValid
@@ -109,23 +111,20 @@ class Conv(convConfig: ConvConfig) extends Component {
         dest := dest
     }
 
-    when(dest === 0) {      // load weigth
+    when(dest === 0) {
         io.sData <> convCompute.io.sParaData
         convCompute.io.sFeatureData.valid := False
         convCompute.io.sFeatureData.payload := 0
-
-    } elsewhen (dest === 1) {// load feature
+    } elsewhen (dest === 1) {
         io.sData <> convCompute.io.sFeatureData
         convCompute.io.sParaData.valid := False
         convCompute.io.sParaData.payload := 0
-
     } otherwise {
         io.sData.ready := False
         convCompute.io.sFeatureData.valid := False
         convCompute.io.sFeatureData.payload := 0
         convCompute.io.sParaData.valid := False
         convCompute.io.sParaData.payload := 0
-
     }
     io.mData <> convCompute.io.mFeatureData
 
@@ -134,17 +133,6 @@ class Conv(convConfig: ConvConfig) extends Component {
 
 object Conv {
     def main(args: Array[String]): Unit = {
-        SpinalConfig(removePruned = true).generateVerilog(new Conv(ConvConfig(
-            DATA_WIDTH = 8,
-            COMPUTE_CHANNEL_IN_NUM = 16,
-            COMPUTE_CHANNEL_OUT_NUM = 16,
-            CHANNEL_WIDTH = 12,
-            WEIGHT_DEPTH = 8192,
-            QUAN_DEPTH = 256,
-            FEATURE = 640,
-            FEATURE_RAM_DEPTH = 8192,
-            ZERO_NUM = 1
-        )))
-        //DATA_WIDTH: Int, COMPUTE_CHANNEL_IN_NUM: Int, COMPUTE_CHANNEL_OUT_NUM: Int, CHANNEL_WIDTH: Int, WEIGHT_DEPTH: Int, QUAN_DEPTH: Int, FEATURE: Int, FEATURE_RAM_DEPTH: Int, ZERO_NUM: Int
+        SpinalConfig(removePruned = true).generateVerilog(new Conv(ConvConfig(8, 16, 16, 12, 8192, 256, 640, 8192, 1)))
     }
 }

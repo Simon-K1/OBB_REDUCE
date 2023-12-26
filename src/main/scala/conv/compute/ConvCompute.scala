@@ -16,9 +16,7 @@ class ConvCompute(convConfig: ConvConfig) extends Component {
         val sParaData = slave Stream UInt(convConfig.WEIGHT_S_DATA_WIDTH bits)
         val sFeatureData = slave Stream UInt(convConfig.FEATURE_S_DATA_WIDTH bits)
         val sFeatureFirstLayerData = slave Stream UInt((if (imageType.dataType == imageType.rgb) 4 * convConfig.DATA_WIDTH else 1 * convConfig.DATA_WIDTH) bits)
-
-        val mFeatureData = master Stream UInt(convConfig.FEATURE_M_DATA_WIDTH bits)     //卷积后输出
-
+        val mFeatureData = master Stream UInt(convConfig.FEATURE_M_DATA_WIDTH bits)
         val mNormData = master(Stream(Vec(SInt(convConfig.addChannelTimesWidth bits), convConfig.COMPUTE_CHANNEL_OUT_NUM))) //调试使用
         val copyWeightDone = out Bool()
         val computeComplete = out Bool()
@@ -41,6 +39,8 @@ class ConvCompute(convConfig: ConvConfig) extends Component {
         val last = out Bool()
         val softReset = in Bool()
         val amendReg = in Bits (32 bits)
+
+        val enArrange = in Bool()
     }
     noIoPrefix()
     ClockDomain(clock = this.clockDomain.clock, reset = this.clockDomain.reset, softReset = io.softReset) {
@@ -50,8 +50,7 @@ class ConvCompute(convConfig: ConvConfig) extends Component {
         }
 
         val channelIncr = new ChannelIncr(convConfig)
-
-        if (enFocus) {      //enFocus = False
+        if (enFocus) {
             val focus = new Focus(convConfig)
             focus.io.sData <> io.sFeatureFirstLayerData
             focus.io.mData <> channelIncr.io.sData
@@ -60,16 +59,14 @@ class ConvCompute(convConfig: ConvConfig) extends Component {
             focus.io.rowNumIn := (io.rowNumIn << 1).resized
             focus.io.colNumIn := (io.colNumIn << 1).resized
         } else {
-            channelIncr.io.sData <> io.sFeatureFirstLayerData       //如果为第一层时，图片数据从sFeatureFirstLayerData进入channelIncr
+            channelIncr.io.sData <> io.sFeatureFirstLayerData
         }
-
         val dataGenerate = new DataGenerate(convConfig.dataGenerateConfig)
-
         when(io.firstLayer) {
-            dataGenerate.io.sData <> channelIncr.io.mData       //如果为第一层，图片数据补完通道后传入dataGenerate
+            dataGenerate.io.sData <> channelIncr.io.mData
             io.sFeatureData.ready := False
         } otherwise {
-            dataGenerate.io.sData <> io.sFeatureData            //不为第一层图片直接进入dataGenerate
+            dataGenerate.io.sData <> io.sFeatureData
             channelIncr.io.mData.ready := False
         }
 
@@ -98,7 +95,7 @@ class ConvCompute(convConfig: ConvConfig) extends Component {
         computeCtrl.io.convType <> convType
 
         val loadWeight = LoadWeight(convConfig)
-        loadWeight.io.sData <> io.sParaData     //权重数据进入
+        loadWeight.io.sData <> io.sParaData
         loadWeight.io.start <> io.startPa
         (0 until convConfig.KERNEL_NUM).foreach { i =>
             loadWeight.io.weightRead(i).addr <> computeCtrl.io.weightReadAddr(i)
@@ -120,16 +117,13 @@ class ConvCompute(convConfig: ConvConfig) extends Component {
         val mReady = Vec(Bool(), convConfig.KERNEL_NUM)
         computeCtrl.io.sDataReady <> mReady(0)
         dataGenerate.io.mData.ready := sReady(0)
-
         val featureFifo = Array.tabulate(convConfig.KERNEL_NUM) { i =>
             def gen: WaXpmSyncFifo = {
                 val fifo = WaXpmSyncFifo(XPM_FIFO_SYNC_CONFIG(MEM_TYPE.block, 0, FIFO_READ_MODE.fwft, convConfig.FEATURE_RAM_DEPTH, convConfig.FEATURE_S_DATA_WIDTH, convConfig.FEATURE_S_DATA_WIDTH))
 
                 if (convConfig.KERNEL_NUM == 9) {
                     fifo.dataIn <> dataGenerate.io.mData.mData(i)
-                    //将dataGenerate传入的九个点数据存入fifo
                 }
-
                 fifo.rd_en <> computeCtrl.io.featureMemWriteReady
                 fifo.sCount <> computeCtrl.io.sCount.resized
                 fifo.mCount <> computeCtrl.io.mCount.resized
@@ -140,7 +134,7 @@ class ConvCompute(convConfig: ConvConfig) extends Component {
             gen
         }
 
-        val featureMemOutData = Vec(UInt(convConfig.FEATURE_S_DATA_WIDTH bits), convConfig.KERNEL_NUM)  //FEATURE_S_DATA_WIDTH = DATA_WIDTH * COMPUTE_CHANNEL_IN_NUM * PICTURE_NUM 包含一个像素点的及其所有通道的数据
+        val featureMemOutData = Vec(UInt(convConfig.FEATURE_S_DATA_WIDTH bits), convConfig.KERNEL_NUM)
         val featureMem = Array.tabulate(convConfig.KERNEL_NUM) { i =>
             def gen = {
 
@@ -163,12 +157,7 @@ class ConvCompute(convConfig: ConvConfig) extends Component {
             myClockDomain.reset.setName("RST_2X")
         }
         val mulFeatureWeightData = Vec(Vec(Vec(UInt(convConfig.mulWeightWidth bits), convConfig.COMPUTE_CHANNEL_IN_NUM), convConfig.COMPUTE_CHANNEL_OUT_NUM / 2), convConfig.KERNEL_NUM)
-        val mulFeatureWeight = if (!config.Config.dsp2x /* true */) Array.tabulate(convConfig.KERNEL_NUM, convConfig.COMPUTE_CHANNEL_OUT_NUM  / 2, convConfig.COMPUTE_CHANNEL_IN_NUM)((i, j, k) => {
-          /**
-           * i < 9
-           * j < 4
-           * k < 8
-           */
+        val mulFeatureWeight = if (!config.Config.dsp2x) Array.tabulate(convConfig.KERNEL_NUM, convConfig.COMPUTE_CHANNEL_OUT_NUM / 2, convConfig.COMPUTE_CHANNEL_IN_NUM)((i, j, k) => {
             def gen = {
                 //提供了两种方式，第二种直接调用DSP IP，节省了资源
                 //            val mul = xMul(24, 8, convConfig.mulWeightWidth)
@@ -176,51 +165,18 @@ class ConvCompute(convConfig: ConvConfig) extends Component {
                 //            mul.io.B <> featureMemOutData(i)((k + 1) * 8 - 1 downto 8 * k)
                 //            mul.io.P <> mulFeatureWeightData(i)(j)(k)
                 val mul = DSP("mulWeight", myClockDomain = myClockDomain, genericTcl = i == 0)
-
-                /**
-                 * mul.p = (mul.a + mul.d) * mul.b
-                 * p = (a + d ) * b
-                 */
-                //i 代表卷积核中数据的下标
-
-                mul.a <> loadWeight.io.weightRead(i).data(((2 * j) *     convConfig.COMPUTE_CHANNEL_IN_NUM + k + 1) * 8 - 1 downto ((2 * j) *     convConfig.COMPUTE_CHANNEL_IN_NUM + k) * 8)
-                /**
-                 *  j代表卷积核偏移, mul.a 中算 0、2、4、6号卷积核
-                 *  j = 0:
-                 *      k代表通道偏移：计算所有通道
-                 *          7  downto 0
-                 *          15 downto 8
-                 *              ...
-                 *          63 downto 54
-                 *  j = 1:
-                 *      ...
-                 */
-
+                mul.a <> loadWeight.io.weightRead(i).data(((2 * j) * convConfig.COMPUTE_CHANNEL_IN_NUM + k + 1) * 8 - 1 downto ((2 * j) * convConfig.COMPUTE_CHANNEL_IN_NUM + k) * 8)
                 mul.d <> loadWeight.io.weightRead(i).data(((2 * j + 1) * convConfig.COMPUTE_CHANNEL_IN_NUM + k + 1) * 8 - 1 downto ((2 * j + 1) * convConfig.COMPUTE_CHANNEL_IN_NUM + k) * 8)
-                /**
-                 *  j代表卷积核偏移, mul.b 中算 1、3、5、7号卷积核
-                 *  j = 0:
-                 *      k代表通道偏移：计算所有通道
-                 *          7  downto 0
-                 *          15 downto 8
-                 *              ...
-                 *          63 downto 54
-                 *
-                 *  j = 1:
-                 *      ...
-                 */
-
-                mul.b <> featureMemOutData(i)((k + 1) * 8 - 1 downto 8 * k)         // 以k获取当前像素的8个通道数据
-                //mul.b <> featureMemOutData(i)((k + 1) * convConfig.DATA_WIDTH - 1 downto convConfig.DATA_WIDTH * k)
+                mul.b <> featureMemOutData(i)((k + 1) * 8 - 1 downto 8 * k)
                 mul.p <> mulFeatureWeightData(i)(j)(k)
             }
+
             gen
         }) else Array.tabulate(convConfig.KERNEL_NUM, convConfig.COMPUTE_CHANNEL_OUT_NUM / 4, convConfig.COMPUTE_CHANNEL_IN_NUM)((i, j, k) => {
             def gen = {
                 val mul = DSP("mulWeight", myClockDomain = myClockDomain, genericTcl = i == 0)
-
-                mul.a  <> loadWeight.io.weightRead(i).data(((4 * j) *     convConfig.COMPUTE_CHANNEL_IN_NUM + k + 1) * 8 - 1 downto ((4 * j) *     convConfig.COMPUTE_CHANNEL_IN_NUM + k) * 8)
-                mul.d  <> loadWeight.io.weightRead(i).data(((4 * j + 1) * convConfig.COMPUTE_CHANNEL_IN_NUM + k + 1) * 8 - 1 downto ((4 * j + 1) * convConfig.COMPUTE_CHANNEL_IN_NUM + k) * 8)
+                mul.a <> loadWeight.io.weightRead(i).data(((4 * j) * convConfig.COMPUTE_CHANNEL_IN_NUM + k + 1) * 8 - 1 downto ((4 * j) * convConfig.COMPUTE_CHANNEL_IN_NUM + k) * 8)
+                mul.d <> loadWeight.io.weightRead(i).data(((4 * j + 1) * convConfig.COMPUTE_CHANNEL_IN_NUM + k + 1) * 8 - 1 downto ((4 * j + 1) * convConfig.COMPUTE_CHANNEL_IN_NUM + k) * 8)
                 mul.a1 <> loadWeight.io.weightRead(i).data(((4 * j + 2) * convConfig.COMPUTE_CHANNEL_IN_NUM + k + 1) * 8 - 1 downto ((4 * j + 2) * convConfig.COMPUTE_CHANNEL_IN_NUM + k) * 8)
                 mul.d1 <> loadWeight.io.weightRead(i).data(((4 * j + 3) * convConfig.COMPUTE_CHANNEL_IN_NUM + k + 1) * 8 - 1 downto ((4 * j + 3) * convConfig.COMPUTE_CHANNEL_IN_NUM + k) * 8)
                 mul.b <> featureMemOutData(i)((k + 1) * 8 - 1 downto 8 * k)
@@ -229,8 +185,6 @@ class ConvCompute(convConfig: ConvConfig) extends Component {
 
             gen
         })
-
-
         val addKernelData = Vec(Vec(SInt(convConfig.addKernelWidth bits), convConfig.COMPUTE_CHANNEL_IN_NUM), convConfig.COMPUTE_CHANNEL_OUT_NUM / 2)
         val addKernel = Array.tabulate(convConfig.COMPUTE_CHANNEL_OUT_NUM / 2, convConfig.COMPUTE_CHANNEL_IN_NUM) { (i, j) =>
             def gen = {
@@ -241,8 +195,10 @@ class ConvCompute(convConfig: ConvConfig) extends Component {
                 )
                 add.io.S <> addKernelData(i)(j)
             }
+
             gen
         }
+
 
         val addChannelData = Vec(SInt(convConfig.addChannelInWidth bits), convConfig.COMPUTE_CHANNEL_OUT_NUM / 2)
         val addChannelIn = Array.tabulate(convConfig.COMPUTE_CHANNEL_OUT_NUM / 2) { i =>
@@ -291,14 +247,35 @@ class ConvCompute(convConfig: ConvConfig) extends Component {
         stride.io.enStride <> io.enStride
         stride.io.sData.valid <> computeCtrl.io.mDataValid
         stride.io.sData.payload <> quan.io.dataOut
-        stride.io.mData <> io.mFeatureData
         stride.io.channelOut <> io.channelOut
         stride.io.colNumIn <> io.colNumIn
         stride.io.rowNumIn <> io.rowNumIn
         stride.io.sReady <> computeCtrl.io.mDataReady
-        stride.io.complete <> io.computeComplete
         stride.io.start <> io.startCu
-        stride.io.last <> io.last
+
+        val dataArrange = new DataArrange(convConfig)
+        dataArrange.io.start      <> io.startCu
+        dataArrange.io.enArrange  <> io.enArrange
+        dataArrange.io.sData.payload    <> stride.io.mData.payload
+        dataArrange.io.sData.valid      <> stride.io.mData.valid
+        dataArrange.io.channelOut <> io.channelOut
+        dataArrange.io.colNumIn <> io.colNumIn
+        dataArrange.io.rowNumIn <> io.rowNumIn
+
+        when(io.enArrange){
+            dataArrange.io.complete <> io.computeComplete
+            dataArrange.io.last     <> io.last
+            dataArrange.io.mData    <> io.mFeatureData
+            dataArrange.io.sData.ready  <> stride.io.mData.ready
+        }otherwise({
+            stride.io.complete  <> io.computeComplete
+            stride.io.last      <> io.last
+            stride.io.mData     <> io.mFeatureData
+
+            dataArrange.io.mData.ready  := True
+        })
+
+
     }
 
 
