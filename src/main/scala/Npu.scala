@@ -113,11 +113,11 @@ object Npu extends App {
     val clockCfg = ClockDomainConfig(resetKind = SYNC, resetActiveLevel = HIGH)
     SpinalConfig(headerWithDate = true, oneFilePerComponent = false, defaultConfigForClockDomains = clockCfg, targetDirectory = Config.filePath + File.separator + "rtl").generateVerilog(new Npu(ConvConfig(
         DATA_WIDTH = 8,
-        COMPUTE_CHANNEL_IN_NUM = 16,
-        COMPUTE_CHANNEL_OUT_NUM = 16,
+        COMPUTE_CHANNEL_IN_NUM = 8,
+        COMPUTE_CHANNEL_OUT_NUM = 8,
         CHANNEL_WIDTH = 12,
-        WEIGHT_DEPTH = 8192,
-        QUAN_DEPTH = 256,
+        WEIGHT_DEPTH = 16384,
+        QUAN_DEPTH = 512,
         FEATURE = 640,
         FEATURE_RAM_DEPTH = 8192,
         ZERO_NUM = 1
