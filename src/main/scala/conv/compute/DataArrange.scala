@@ -108,11 +108,11 @@ class DataArrange(convConfig: ConvConfig) extends Component {
   } otherwise {
     weav.map(w => w := False)
   }
-
+  val maxAddr = RegNext((colTimes * rowTimes * channelTimes >> log2Up(convConfig.COMPUTE_CHANNEL_OUT_NUM)) - 1)
   val w_addr = Vec(Reg(UInt(log2Up(convConfig.dataArrangeDepth) bits)) init 0, convConfig.COMPUTE_CHANNEL_OUT_NUM)
   (0 until convConfig.COMPUTE_CHANNEL_OUT_NUM).foreach(i => {
     when(weav(i)) {
-      when(w_addr(i) === (colTimes * rowTimes * channelTimes >> log2Up(convConfig.COMPUTE_CHANNEL_OUT_NUM)) - 1) {
+      when(w_addr(i) === maxAddr) {
         w_addr(i) := 0
       } otherwise {
         w_addr(i) := w_addr(i) + 1
@@ -121,7 +121,8 @@ class DataArrange(convConfig: ConvConfig) extends Component {
   })
 
   val r_addr = Reg(UInt(log2Up(convConfig.dataArrangeDepth * convConfig.COMPUTE_CHANNEL_OUT_NUM) bits)) init 0
-
+  addMaxfanout(r_addr)
+  
   val res_fifo = StreamFifo(UInt(convConfig.FEATURE_M_DATA_WIDTH bits), 10)
   res_fifo.io.pop <> io.mData
 

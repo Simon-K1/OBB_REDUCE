@@ -26,5 +26,8 @@ object Config {
 
     val DEBUG_MODULE = true
 
+    val MAX_FANOUT = true
     def addDebug[a <: Data](temp: a) = if (DEBUG_MODULE) temp.addAttribute("mark_debug", "true")
+
+    def addMaxfanout[a <: Data](temp: a) = if(MAX_FANOUT)  temp.addAttribute("MAX_FANOUT", "16")
 }

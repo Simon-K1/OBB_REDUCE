@@ -1,5 +1,6 @@
 // Generator : SpinalHDL v1.7.3    git head : ed8004c489ee8a38c2cab309d0447b543fe9d5b8
 // Component : Conv
+// Git hash  : b9fb49eab4d8304401a0f0476e80777f0658ec92
 
 `timescale 1ns/1ps
 
@@ -20,7 +21,7 @@ module Conv (
   input      [31:0]   instruction_4,
   input      [3:0]    control,
   output     [3:0]    state,
-  output              dmaReadValid,
+  (* mark_debug = "true" *) output              dmaReadValid,
   output              dmaFirstLayerReadValid,
   output              dmaWriteValid,
   input               introut,
@@ -49,6 +50,7 @@ module Conv (
   wire                convCompute_1_firstLayer;
   wire       [1:0]    convCompute_1_convType;
   wire       [31:0]   convCompute_1_amendReg;
+  wire                convCompute_1_enArrange;
   wire       [3:0]    convState_1_state;
   wire       [3:0]    convState_1_sign;
   wire                convState_1_dmaReadValid;
@@ -85,15 +87,15 @@ module Conv (
   reg                 compute_delay_2;
   reg                 compute_delay_3;
   reg                 writeComplete;
-  wire                when_Conv_l89;
+  wire                when_Conv_l91;
   reg                 computeComplete;
-  wire                when_Conv_l93;
-  wire                when_Conv_l97;
+  wire                when_Conv_l95;
+  wire                when_Conv_l99;
   (* max_fanout = "10" *) reg        [1:0]    dest;
-  wire                when_Conv_l104;
   wire                when_Conv_l106;
-  wire                when_Conv_l112;
-  wire                when_Conv_l117;
+  wire                when_Conv_l108;
+  wire                when_Conv_l114;
+  wire                when_Conv_l118;
 
   assign _zz_channelIn = computeInstructionReg[31 : 21];
   assign _zz_channelOut = computeInstructionReg[41 : 32];
@@ -146,6 +148,7 @@ module Conv (
     .last                           (convCompute_1_last                        ), //o
     .softReset                      (convState_1_softReset_delay_2             ), //i
     .amendReg                       (convCompute_1_amendReg[31:0]              ), //i
+    .enArrange                      (convCompute_1_enArrange                   ), //i
     .reset                          (reset                                     ), //i
     .clk                            (clk                                       )  //i
   );
@@ -170,18 +173,19 @@ module Conv (
   assign convCompute_1_enStride = computeInstructionReg[63];
   assign convCompute_1_firstLayer = computeInstructionReg[66];
   assign convCompute_1_amendReg = computeInstructionReg[159 : 128];
+  assign convCompute_1_enArrange = computeInstructionReg[67];
   assign convCompute_1_weightNum = _zz_weightNum[12:0];
   assign convCompute_1_quanNum = _zz_quanNum[7:0];
   assign dmaReadValid = (convState_1_dmaReadValid && (! computeInstructionReg[66]));
   assign dmaFirstLayerReadValid = (convState_1_dmaReadValid && computeInstructionReg[66]);
   assign dmaWriteValid = convState_1_dmaWriteValid;
-  assign when_Conv_l89 = (control == 4'b1111);
-  assign when_Conv_l93 = (control == 4'b1111);
+  assign when_Conv_l91 = (control == 4'b1111);
+  assign when_Conv_l95 = (control == 4'b1111);
   always @(*) begin
     if(convCompute_1_copyWeightDone) begin
       convState_1_complete = 4'b0001;
     end else begin
-      if(when_Conv_l97) begin
+      if(when_Conv_l99) begin
         convState_1_complete = 4'b0010;
       end else begin
         convState_1_complete = 4'b0000;
@@ -189,15 +193,15 @@ module Conv (
     end
   end
 
-  assign when_Conv_l97 = (computeComplete && writeComplete);
-  assign when_Conv_l104 = (control == 4'b0001);
-  assign when_Conv_l106 = (control == 4'b0010);
-  assign when_Conv_l112 = (dest == 2'b00);
+  assign when_Conv_l99 = (computeComplete && writeComplete);
+  assign when_Conv_l106 = (control == 4'b0001);
+  assign when_Conv_l108 = (control == 4'b0010);
+  assign when_Conv_l114 = (dest == 2'b00);
   always @(*) begin
-    if(when_Conv_l112) begin
+    if(when_Conv_l114) begin
       convCompute_1_sParaData_valid = sData_valid;
     end else begin
-      if(when_Conv_l117) begin
+      if(when_Conv_l118) begin
         convCompute_1_sParaData_valid = 1'b0;
       end else begin
         convCompute_1_sParaData_valid = 1'b0;
@@ -206,10 +210,10 @@ module Conv (
   end
 
   always @(*) begin
-    if(when_Conv_l112) begin
+    if(when_Conv_l114) begin
       sData_ready = convCompute_1_sParaData_ready;
     end else begin
-      if(when_Conv_l117) begin
+      if(when_Conv_l118) begin
         sData_ready = convCompute_1_sFeatureData_ready;
       end else begin
         sData_ready = 1'b0;
@@ -218,10 +222,10 @@ module Conv (
   end
 
   always @(*) begin
-    if(when_Conv_l112) begin
+    if(when_Conv_l114) begin
       convCompute_1_sParaData_payload = sData_payload;
     end else begin
-      if(when_Conv_l117) begin
+      if(when_Conv_l118) begin
         convCompute_1_sParaData_payload = 128'h0;
       end else begin
         convCompute_1_sParaData_payload = 128'h0;
@@ -230,10 +234,10 @@ module Conv (
   end
 
   always @(*) begin
-    if(when_Conv_l112) begin
+    if(when_Conv_l114) begin
       convCompute_1_sFeatureData_valid = 1'b0;
     end else begin
-      if(when_Conv_l117) begin
+      if(when_Conv_l118) begin
         convCompute_1_sFeatureData_valid = sData_valid;
       end else begin
         convCompute_1_sFeatureData_valid = 1'b0;
@@ -242,10 +246,10 @@ module Conv (
   end
 
   always @(*) begin
-    if(when_Conv_l112) begin
+    if(when_Conv_l114) begin
       convCompute_1_sFeatureData_payload = 128'h0;
     end else begin
-      if(when_Conv_l117) begin
+      if(when_Conv_l118) begin
         convCompute_1_sFeatureData_payload = sData_payload;
       end else begin
         convCompute_1_sFeatureData_payload = 128'h0;
@@ -253,7 +257,7 @@ module Conv (
     end
   end
 
-  assign when_Conv_l117 = (dest == 2'b01);
+  assign when_Conv_l118 = (dest == 2'b01);
   assign mData_valid = convCompute_1_mFeatureData_valid;
   assign mData_payload = convCompute_1_mFeatureData_payload;
   always @(posedge clk or posedge reset) begin
@@ -281,19 +285,19 @@ module Conv (
       if(introut) begin
         writeComplete <= 1'b1;
       end
-      if(when_Conv_l89) begin
+      if(when_Conv_l91) begin
         writeComplete <= 1'b0;
       end
       if(convCompute_1_computeComplete) begin
         computeComplete <= 1'b1;
       end
-      if(when_Conv_l93) begin
+      if(when_Conv_l95) begin
         computeComplete <= 1'b0;
       end
-      if(when_Conv_l104) begin
+      if(when_Conv_l106) begin
         dest <= 2'b00;
       end else begin
-        if(when_Conv_l106) begin
+        if(when_Conv_l108) begin
           dest <= 2'b01;
         end else begin
           dest <= dest;
@@ -328,11 +332,11 @@ module ConvCompute (
   input               sFeatureFirstLayerData_valid,
   output              sFeatureFirstLayerData_ready,
   input      [7:0]    sFeatureFirstLayerData_payload,
-  output              mFeatureData_valid,
+  output reg          mFeatureData_valid,
   input               mFeatureData_ready,
-  output     [127:0]  mFeatureData_payload,
+  output reg [127:0]  mFeatureData_payload,
   output              copyWeightDone,
-  output              computeComplete,
+  output reg          computeComplete,
   input      [9:0]    rowNumIn,
   input      [9:0]    colNumIn,
   input      [11:0]   channelIn,
@@ -347,9 +351,10 @@ module ConvCompute (
   input               enStride,
   input               firstLayer,
   input      [1:0]    convType,
-  output              last,
+  output reg          last,
   input               softReset,
   input      [31:0]   amendReg,
+  input               enArrange,
   input               reset,
   input               clk
 );
@@ -4983,6 +4988,8 @@ module ConvCompute (
   wire       [23:0]   xAddChannelTimes_29_A;
   wire       [23:0]   xAddChannelTimes_30_A;
   wire       [23:0]   xAddChannelTimes_31_A;
+  reg                 stride_1_mData_ready;
+  reg                 dataArrange_1_mData_ready;
   reg        [127:0]  _zz__zz_1_port1;
   reg        [127:0]  _zz__zz_2_port1;
   reg        [127:0]  _zz__zz_3_port1;
@@ -6369,6 +6376,11 @@ module ConvCompute (
   wire                stride_1_sReady;
   wire                stride_1_complete;
   wire                stride_1_last;
+  wire                dataArrange_1_sData_ready;
+  wire                dataArrange_1_mData_valid;
+  wire       [127:0]  dataArrange_1_mData_payload;
+  wire                dataArrange_1_complete;
+  wire                dataArrange_1_last;
   wire       [127:0]  _zz__zz_1_port;
   wire                _zz__zz_1_port_1;
   wire                _zz__zz_b_9;
@@ -17161,7 +17173,7 @@ module ConvCompute (
     .sData_ready   (stride_1_sData_ready         ), //o
     .sData_payload (quan_1_dataOut[127:0]        ), //i
     .mData_valid   (stride_1_mData_valid         ), //o
-    .mData_ready   (mFeatureData_ready           ), //i
+    .mData_ready   (stride_1_mData_ready         ), //i
     .mData_payload (stride_1_mData_payload[127:0]), //o
     .sReady        (stride_1_sReady              ), //o
     .complete      (stride_1_complete            ), //o
@@ -17174,6 +17186,24 @@ module ConvCompute (
     .clk           (clk                          ), //i
     .reset         (reset                        ), //i
     .softReset     (softReset                    )  //i
+  );
+  DataArrange dataArrange_1 (
+    .sData_valid   (stride_1_mData_valid              ), //i
+    .sData_ready   (dataArrange_1_sData_ready         ), //o
+    .sData_payload (stride_1_mData_payload[127:0]     ), //i
+    .mData_valid   (dataArrange_1_mData_valid         ), //o
+    .mData_ready   (dataArrange_1_mData_ready         ), //i
+    .mData_payload (dataArrange_1_mData_payload[127:0]), //o
+    .complete      (dataArrange_1_complete            ), //o
+    .start         (startCu                           ), //i
+    .enArrange     (enArrange                         ), //i
+    .rowNumIn      (rowNumIn[9:0]                     ), //i
+    .colNumIn      (colNumIn[9:0]                     ), //i
+    .channelOut    (channelOut[11:0]                  ), //i
+    .last          (dataArrange_1_last                ), //o
+    .clk           (clk                               ), //i
+    .reset         (reset                             ), //i
+    .softReset     (softReset                         )  //i
   );
   assign sFeatureFirstLayerData_ready = channelIncr_1_sData_ready;
   always @(*) begin
@@ -21853,10 +21883,54 @@ module ConvCompute (
   assign xAddChannelTimes_29_A = _zz_A_6[47 : 24];
   assign xAddChannelTimes_30_A = _zz_A_7[23 : 0];
   assign xAddChannelTimes_31_A = _zz_A_7[47 : 24];
-  assign mFeatureData_valid = stride_1_mData_valid;
-  assign mFeatureData_payload = stride_1_mData_payload;
-  assign computeComplete = stride_1_complete;
-  assign last = stride_1_last;
+  always @(*) begin
+    if(enArrange) begin
+      computeComplete = dataArrange_1_complete;
+    end else begin
+      computeComplete = stride_1_complete;
+    end
+  end
+
+  always @(*) begin
+    if(enArrange) begin
+      last = dataArrange_1_last;
+    end else begin
+      last = stride_1_last;
+    end
+  end
+
+  always @(*) begin
+    if(enArrange) begin
+      mFeatureData_valid = dataArrange_1_mData_valid;
+    end else begin
+      mFeatureData_valid = stride_1_mData_valid;
+    end
+  end
+
+  always @(*) begin
+    if(enArrange) begin
+      dataArrange_1_mData_ready = mFeatureData_ready;
+    end else begin
+      dataArrange_1_mData_ready = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    if(enArrange) begin
+      mFeatureData_payload = dataArrange_1_mData_payload;
+    end else begin
+      mFeatureData_payload = stride_1_mData_payload;
+    end
+  end
+
+  always @(*) begin
+    if(enArrange) begin
+      stride_1_mData_ready = dataArrange_1_sData_ready;
+    end else begin
+      stride_1_mData_ready = mFeatureData_ready;
+    end
+  end
+
   always @(posedge clk) begin
     if(startPa) begin
       _zz_convType <= convType;
@@ -21975,12 +22049,12 @@ module ConvState (
 
   reg        [4:0]    fsm_currentState;
   reg        [4:0]    fsm_nextState;
-  wire                when_ConvState_l80;
   wire                when_ConvState_l82;
-  wire                when_ConvState_l89;
-  wire                when_ConvState_l96;
-  wire                when_ConvState_l103;
-  wire                when_ConvState_l110;
+  wire                when_ConvState_l84;
+  wire                when_ConvState_l91;
+  wire                when_ConvState_l98;
+  wire                when_ConvState_l105;
+  wire                when_ConvState_l112;
   reg                 dmaReadValid_1;
   reg                 dmaWriteValid_1;
   reg                 dmaWriteValid_1_delay_1;
@@ -21991,9 +22065,9 @@ module ConvState (
   reg                 dmaReadValid_1_delay_2;
   reg                 dmaReadValid_1_delay_3;
   reg                 dmaReadValid_1_delay_4;
-  wire                when_ConvState_l157;
-  wire                when_ConvState_l161;
-  wire                when_ConvState_l171;
+  wire                when_ConvState_l159;
+  wire                when_ConvState_l163;
+  wire                when_ConvState_l173;
   `ifndef SYNTHESIS
   reg [87:0] fsm_currentState_string;
   reg [87:0] fsm_nextState_string;
@@ -22023,15 +22097,15 @@ module ConvState (
   end
   `endif
 
-  assign when_ConvState_l80 = (control == 4'b0001);
+  assign when_ConvState_l82 = (control == 4'b0001);
   always @(*) begin
     (* parallel_case *)
     case(1) // synthesis parallel_case
       (((fsm_currentState) & ConvStateEnum_IDLE) == ConvStateEnum_IDLE) : begin
-        if(when_ConvState_l80) begin
+        if(when_ConvState_l82) begin
           fsm_nextState = ConvStateEnum_PARA;
         end else begin
-          if(when_ConvState_l82) begin
+          if(when_ConvState_l84) begin
             fsm_nextState = ConvStateEnum_COMPUTE;
           end else begin
             fsm_nextState = ConvStateEnum_IDLE;
@@ -22039,28 +22113,28 @@ module ConvState (
         end
       end
       (((fsm_currentState) & ConvStateEnum_PARA) == ConvStateEnum_PARA) : begin
-        if(when_ConvState_l89) begin
+        if(when_ConvState_l91) begin
           fsm_nextState = ConvStateEnum_PARA_IRQ;
         end else begin
           fsm_nextState = ConvStateEnum_PARA;
         end
       end
       (((fsm_currentState) & ConvStateEnum_PARA_IRQ) == ConvStateEnum_PARA_IRQ) : begin
-        if(when_ConvState_l96) begin
+        if(when_ConvState_l98) begin
           fsm_nextState = ConvStateEnum_IDLE;
         end else begin
           fsm_nextState = ConvStateEnum_PARA_IRQ;
         end
       end
       (((fsm_currentState) & ConvStateEnum_COMPUTE) == ConvStateEnum_COMPUTE) : begin
-        if(when_ConvState_l103) begin
+        if(when_ConvState_l105) begin
           fsm_nextState = ConvStateEnum_COMPUTE_IRQ;
         end else begin
           fsm_nextState = ConvStateEnum_COMPUTE;
         end
       end
       default : begin
-        if(when_ConvState_l110) begin
+        if(when_ConvState_l112) begin
           fsm_nextState = ConvStateEnum_IDLE;
         end else begin
           fsm_nextState = ConvStateEnum_COMPUTE_IRQ;
@@ -22069,16 +22143,16 @@ module ConvState (
     endcase
   end
 
-  assign when_ConvState_l82 = (control == 4'b0010);
-  assign when_ConvState_l89 = (complete == 4'b0001);
-  assign when_ConvState_l96 = (control == 4'b1111);
-  assign when_ConvState_l103 = (complete == 4'b0010);
-  assign when_ConvState_l110 = (control == 4'b1111);
-  assign when_ConvState_l157 = (((fsm_currentState & ConvStateEnum_IDLE) != 5'b00000) && ((fsm_nextState & ConvStateEnum_PARA) != 5'b00000));
-  assign when_ConvState_l161 = (((fsm_currentState & ConvStateEnum_IDLE) != 5'b00000) && ((fsm_nextState & ConvStateEnum_COMPUTE) != 5'b00000));
-  assign when_ConvState_l171 = (((fsm_currentState & ConvStateEnum_COMPUTE_IRQ) != 5'b00000) && ((fsm_nextState & ConvStateEnum_IDLE) != 5'b00000));
+  assign when_ConvState_l84 = (control == 4'b0010);
+  assign when_ConvState_l91 = (complete == 4'b0001);
+  assign when_ConvState_l98 = (control == 4'b1111);
+  assign when_ConvState_l105 = (complete == 4'b0010);
+  assign when_ConvState_l112 = (control == 4'b1111);
+  assign when_ConvState_l159 = (((fsm_currentState & ConvStateEnum_IDLE) != 5'b00000) && ((fsm_nextState & ConvStateEnum_PARA) != 5'b00000));
+  assign when_ConvState_l163 = (((fsm_currentState & ConvStateEnum_IDLE) != 5'b00000) && ((fsm_nextState & ConvStateEnum_COMPUTE) != 5'b00000));
+  assign when_ConvState_l173 = (((fsm_currentState & ConvStateEnum_COMPUTE_IRQ) != 5'b00000) && ((fsm_nextState & ConvStateEnum_IDLE) != 5'b00000));
   always @(*) begin
-    if(when_ConvState_l171) begin
+    if(when_ConvState_l173) begin
       softReset = 1'b1;
     end else begin
       softReset = 1'b0;
@@ -22096,11 +22170,11 @@ module ConvState (
       fsm_currentState <= fsm_nextState;
       dmaWriteValid <= dmaWriteValid_1_delay_4;
       dmaReadValid <= dmaReadValid_1_delay_4;
-      if(when_ConvState_l157) begin
+      if(when_ConvState_l159) begin
         dmaReadValid_1 <= 1'b1;
         dmaWriteValid_1 <= 1'b0;
       end else begin
-        if(when_ConvState_l161) begin
+        if(when_ConvState_l163) begin
           dmaWriteValid_1 <= 1'b1;
           dmaReadValid_1 <= 1'b1;
         end else begin
@@ -22138,15 +22212,1410 @@ module ConvState (
     dmaReadValid_1_delay_2 <= dmaReadValid_1_delay_1;
     dmaReadValid_1_delay_3 <= dmaReadValid_1_delay_2;
     dmaReadValid_1_delay_4 <= dmaReadValid_1_delay_3;
-    if(when_ConvState_l157) begin
+    if(when_ConvState_l159) begin
       sign <= 4'b0001;
     end else begin
-      if(when_ConvState_l161) begin
+      if(when_ConvState_l163) begin
         sign <= 4'b0010;
       end else begin
         sign <= 4'b0000;
       end
     end
+  end
+
+
+endmodule
+
+module DataArrange (
+  input               sData_valid,
+  output reg          sData_ready,
+  input      [127:0]  sData_payload,
+  output              mData_valid,
+  input               mData_ready,
+  output     [127:0]  mData_payload,
+  output              complete,
+  input               start,
+  input               enArrange,
+  input      [9:0]    rowNumIn,
+  input      [9:0]    colNumIn,
+  input      [11:0]   channelOut,
+  output              last,
+  input               clk,
+  input               reset,
+  input               softReset
+);
+  localparam DataArrangeEnum_IDLE = 4'd1;
+  localparam DataArrangeEnum_INIT = 4'd2;
+  localparam DataArrangeEnum_DATA_READY = 4'd4;
+  localparam DataArrangeEnum_ARRANGE = 4'd8;
+
+  reg        [127:0]  res_fifo_io_push_payload;
+  wire       [11:0]   dataRam_0_addra;
+  wire       [15:0]   dataRam_0_addrb;
+  wire       [127:0]  dataRam_0_dina;
+  wire       [0:0]    dataRam_0_wea;
+  wire       [11:0]   dataRam_1_addra;
+  wire       [15:0]   dataRam_1_addrb;
+  wire       [127:0]  dataRam_1_dina;
+  wire       [0:0]    dataRam_1_wea;
+  wire       [11:0]   dataRam_2_addra;
+  wire       [15:0]   dataRam_2_addrb;
+  wire       [127:0]  dataRam_2_dina;
+  wire       [0:0]    dataRam_2_wea;
+  wire       [11:0]   dataRam_3_addra;
+  wire       [15:0]   dataRam_3_addrb;
+  wire       [127:0]  dataRam_3_dina;
+  wire       [0:0]    dataRam_3_wea;
+  wire       [11:0]   dataRam_4_addra;
+  wire       [15:0]   dataRam_4_addrb;
+  wire       [127:0]  dataRam_4_dina;
+  wire       [0:0]    dataRam_4_wea;
+  wire       [11:0]   dataRam_5_addra;
+  wire       [15:0]   dataRam_5_addrb;
+  wire       [127:0]  dataRam_5_dina;
+  wire       [0:0]    dataRam_5_wea;
+  wire       [11:0]   dataRam_6_addra;
+  wire       [15:0]   dataRam_6_addrb;
+  wire       [127:0]  dataRam_6_dina;
+  wire       [0:0]    dataRam_6_wea;
+  wire       [11:0]   dataRam_7_addra;
+  wire       [15:0]   dataRam_7_addrb;
+  wire       [127:0]  dataRam_7_dina;
+  wire       [0:0]    dataRam_7_wea;
+  wire       [11:0]   dataRam_8_addra;
+  wire       [15:0]   dataRam_8_addrb;
+  wire       [127:0]  dataRam_8_dina;
+  wire       [0:0]    dataRam_8_wea;
+  wire       [11:0]   dataRam_9_addra;
+  wire       [15:0]   dataRam_9_addrb;
+  wire       [127:0]  dataRam_9_dina;
+  wire       [0:0]    dataRam_9_wea;
+  wire       [11:0]   dataRam_10_addra;
+  wire       [15:0]   dataRam_10_addrb;
+  wire       [127:0]  dataRam_10_dina;
+  wire       [0:0]    dataRam_10_wea;
+  wire       [11:0]   dataRam_11_addra;
+  wire       [15:0]   dataRam_11_addrb;
+  wire       [127:0]  dataRam_11_dina;
+  wire       [0:0]    dataRam_11_wea;
+  wire       [11:0]   dataRam_12_addra;
+  wire       [15:0]   dataRam_12_addrb;
+  wire       [127:0]  dataRam_12_dina;
+  wire       [0:0]    dataRam_12_wea;
+  wire       [11:0]   dataRam_13_addra;
+  wire       [15:0]   dataRam_13_addrb;
+  wire       [127:0]  dataRam_13_dina;
+  wire       [0:0]    dataRam_13_wea;
+  wire       [11:0]   dataRam_14_addra;
+  wire       [15:0]   dataRam_14_addrb;
+  wire       [127:0]  dataRam_14_dina;
+  wire       [0:0]    dataRam_14_wea;
+  wire       [11:0]   dataRam_15_addra;
+  wire       [15:0]   dataRam_15_addrb;
+  wire       [127:0]  dataRam_15_dina;
+  wire       [0:0]    dataRam_15_wea;
+  wire                res_fifo_io_push_ready;
+  wire                res_fifo_io_pop_valid;
+  wire       [127:0]  res_fifo_io_pop_payload;
+  wire       [3:0]    res_fifo_io_availability;
+  wire       [7:0]    dataRam_0_doutb;
+  wire       [7:0]    dataRam_1_doutb;
+  wire       [7:0]    dataRam_2_doutb;
+  wire       [7:0]    dataRam_3_doutb;
+  wire       [7:0]    dataRam_4_doutb;
+  wire       [7:0]    dataRam_5_doutb;
+  wire       [7:0]    dataRam_6_doutb;
+  wire       [7:0]    dataRam_7_doutb;
+  wire       [7:0]    dataRam_8_doutb;
+  wire       [7:0]    dataRam_9_doutb;
+  wire       [7:0]    dataRam_10_doutb;
+  wire       [7:0]    dataRam_11_doutb;
+  wire       [7:0]    dataRam_12_doutb;
+  wire       [7:0]    dataRam_13_doutb;
+  wire       [7:0]    dataRam_14_doutb;
+  wire       [7:0]    dataRam_15_doutb;
+  wire       [7:0]    _zz_when_WaCounter_l12_1;
+  wire       [9:0]    _zz_when_WaCounter_l12_2;
+  wire       [9:0]    _zz_when_WaCounter_l12_3;
+  wire       [23:0]   _zz_when_DataArrange_l115;
+  wire       [23:0]   _zz_when_DataArrange_l115_1;
+  wire       [23:0]   _zz_when_DataArrange_l115_2;
+  wire       [27:0]   _zz_when_DataArrange_l115_3;
+  wire       [19:0]   _zz_when_DataArrange_l115_4;
+  wire       [23:0]   _zz_when_DataArrange_l115_1_1;
+  wire       [23:0]   _zz_when_DataArrange_l115_1_2;
+  wire       [23:0]   _zz_when_DataArrange_l115_1_3;
+  wire       [27:0]   _zz_when_DataArrange_l115_1_4;
+  wire       [19:0]   _zz_when_DataArrange_l115_1_5;
+  wire       [23:0]   _zz_when_DataArrange_l115_2_1;
+  wire       [23:0]   _zz_when_DataArrange_l115_2_2;
+  wire       [23:0]   _zz_when_DataArrange_l115_2_3;
+  wire       [27:0]   _zz_when_DataArrange_l115_2_4;
+  wire       [19:0]   _zz_when_DataArrange_l115_2_5;
+  wire       [23:0]   _zz_when_DataArrange_l115_3_1;
+  wire       [23:0]   _zz_when_DataArrange_l115_3_2;
+  wire       [23:0]   _zz_when_DataArrange_l115_3_3;
+  wire       [27:0]   _zz_when_DataArrange_l115_3_4;
+  wire       [19:0]   _zz_when_DataArrange_l115_3_5;
+  wire       [23:0]   _zz_when_DataArrange_l115_4_1;
+  wire       [23:0]   _zz_when_DataArrange_l115_4_2;
+  wire       [23:0]   _zz_when_DataArrange_l115_4_3;
+  wire       [27:0]   _zz_when_DataArrange_l115_4_4;
+  wire       [19:0]   _zz_when_DataArrange_l115_4_5;
+  wire       [23:0]   _zz_when_DataArrange_l115_5;
+  wire       [23:0]   _zz_when_DataArrange_l115_5_1;
+  wire       [23:0]   _zz_when_DataArrange_l115_5_2;
+  wire       [27:0]   _zz_when_DataArrange_l115_5_3;
+  wire       [19:0]   _zz_when_DataArrange_l115_5_4;
+  wire       [23:0]   _zz_when_DataArrange_l115_6;
+  wire       [23:0]   _zz_when_DataArrange_l115_6_1;
+  wire       [23:0]   _zz_when_DataArrange_l115_6_2;
+  wire       [27:0]   _zz_when_DataArrange_l115_6_3;
+  wire       [19:0]   _zz_when_DataArrange_l115_6_4;
+  wire       [23:0]   _zz_when_DataArrange_l115_7;
+  wire       [23:0]   _zz_when_DataArrange_l115_7_1;
+  wire       [23:0]   _zz_when_DataArrange_l115_7_2;
+  wire       [27:0]   _zz_when_DataArrange_l115_7_3;
+  wire       [19:0]   _zz_when_DataArrange_l115_7_4;
+  wire       [23:0]   _zz_when_DataArrange_l115_8;
+  wire       [23:0]   _zz_when_DataArrange_l115_8_1;
+  wire       [23:0]   _zz_when_DataArrange_l115_8_2;
+  wire       [27:0]   _zz_when_DataArrange_l115_8_3;
+  wire       [19:0]   _zz_when_DataArrange_l115_8_4;
+  wire       [23:0]   _zz_when_DataArrange_l115_9;
+  wire       [23:0]   _zz_when_DataArrange_l115_9_1;
+  wire       [23:0]   _zz_when_DataArrange_l115_9_2;
+  wire       [27:0]   _zz_when_DataArrange_l115_9_3;
+  wire       [19:0]   _zz_when_DataArrange_l115_9_4;
+  wire       [23:0]   _zz_when_DataArrange_l115_10;
+  wire       [23:0]   _zz_when_DataArrange_l115_10_1;
+  wire       [23:0]   _zz_when_DataArrange_l115_10_2;
+  wire       [27:0]   _zz_when_DataArrange_l115_10_3;
+  wire       [19:0]   _zz_when_DataArrange_l115_10_4;
+  wire       [23:0]   _zz_when_DataArrange_l115_11;
+  wire       [23:0]   _zz_when_DataArrange_l115_11_1;
+  wire       [23:0]   _zz_when_DataArrange_l115_11_2;
+  wire       [27:0]   _zz_when_DataArrange_l115_11_3;
+  wire       [19:0]   _zz_when_DataArrange_l115_11_4;
+  wire       [23:0]   _zz_when_DataArrange_l115_12;
+  wire       [23:0]   _zz_when_DataArrange_l115_12_1;
+  wire       [23:0]   _zz_when_DataArrange_l115_12_2;
+  wire       [27:0]   _zz_when_DataArrange_l115_12_3;
+  wire       [19:0]   _zz_when_DataArrange_l115_12_4;
+  wire       [23:0]   _zz_when_DataArrange_l115_13;
+  wire       [23:0]   _zz_when_DataArrange_l115_13_1;
+  wire       [23:0]   _zz_when_DataArrange_l115_13_2;
+  wire       [27:0]   _zz_when_DataArrange_l115_13_3;
+  wire       [19:0]   _zz_when_DataArrange_l115_13_4;
+  wire       [23:0]   _zz_when_DataArrange_l115_14;
+  wire       [23:0]   _zz_when_DataArrange_l115_14_1;
+  wire       [23:0]   _zz_when_DataArrange_l115_14_2;
+  wire       [27:0]   _zz_when_DataArrange_l115_14_3;
+  wire       [19:0]   _zz_when_DataArrange_l115_14_4;
+  wire       [23:0]   _zz_when_DataArrange_l115_15;
+  wire       [23:0]   _zz_when_DataArrange_l115_15_1;
+  wire       [23:0]   _zz_when_DataArrange_l115_15_2;
+  wire       [27:0]   _zz_when_DataArrange_l115_15_3;
+  wire       [19:0]   _zz_when_DataArrange_l115_15_4;
+  wire       [15:0]   _zz_when_WaCounter_l12_5;
+  wire       [15:0]   _zz_when_WaCounter_l12_5_1;
+  wire       [19:0]   _zz_when_WaCounter_l12_5_2;
+  wire       [11:0]   _zz_when_WaCounter_l12_6;
+  wire       [11:0]   _zz_r_addr;
+  wire       [15:0]   _zz_r_addr_1;
+  wire       [7:0]    _zz_when_WaCounter_l12_7;
+  wire       [9:0]    _zz_when_WaCounter_l12_8;
+  wire       [9:0]    _zz_when_WaCounter_l12_9;
+  wire                dataArrangeFsm_start;
+  wire                dataArrangeFsm_initEnd;
+  wire                dataArrangeFsm_dataReady;
+  wire                dataArrangeFsm_arrangeEnd;
+  reg        [3:0]    dataArrangeFsm_currentState;
+  reg        [3:0]    dataArrangeFsm_nextState;
+  wire                when_WaCounter_l17;
+  reg        [2:0]    initCnt_count;
+  reg                 initCnt_valid;
+  wire                when_WaCounter_l12;
+  wire                when_DataArrange_l77;
+  reg        [7:0]    channelTimes;
+  wire                when_DataArrange_l78;
+  reg        [9:0]    colTimes;
+  wire                when_DataArrange_l79;
+  reg        [9:0]    rowTimes;
+  wire                sData_fire;
+  wire                when_WaCounter_l17_1;
+  reg        [7:0]    channelCnt_count;
+  reg                 channelCnt_valid;
+  wire                when_WaCounter_l12_1;
+  wire                sData_fire_1;
+  wire                when_WaCounter_l17_2;
+  reg        [9:0]    colCnt_count;
+  reg                 colCnt_valid;
+  wire                when_WaCounter_l12_2;
+  wire                sData_fire_2;
+  wire                when_WaCounter_l17_3;
+  reg        [9:0]    rowCnt_count;
+  reg                 rowCnt_valid;
+  wire                when_WaCounter_l12_3;
+  wire                sData_fire_3;
+  wire                when_WaCounter_l17_4;
+  reg        [3:0]    w_cnt_count;
+  reg                 w_cnt_valid;
+  wire                when_WaCounter_l12_4;
+  wire                when_DataArrange_l87;
+  wire                sData_fire_4;
+  reg                 weav_0;
+  reg                 weav_1;
+  reg                 weav_2;
+  reg                 weav_3;
+  reg                 weav_4;
+  reg                 weav_5;
+  reg                 weav_6;
+  reg                 weav_7;
+  reg                 weav_8;
+  reg                 weav_9;
+  reg                 weav_10;
+  reg                 weav_11;
+  reg                 weav_12;
+  reg                 weav_13;
+  reg                 weav_14;
+  reg                 weav_15;
+  wire                sData_fire_5;
+  wire                when_DataArrange_l100;
+  wire                when_DataArrange_l102;
+  wire                when_DataArrange_l102_1;
+  wire                when_DataArrange_l102_2;
+  wire                when_DataArrange_l102_3;
+  wire                when_DataArrange_l102_4;
+  wire                when_DataArrange_l102_5;
+  wire                when_DataArrange_l102_6;
+  wire                when_DataArrange_l102_7;
+  wire                when_DataArrange_l102_8;
+  wire                when_DataArrange_l102_9;
+  wire                when_DataArrange_l102_10;
+  wire                when_DataArrange_l102_11;
+  wire                when_DataArrange_l102_12;
+  wire                when_DataArrange_l102_13;
+  wire                when_DataArrange_l102_14;
+  wire                when_DataArrange_l102_15;
+  reg        [11:0]   w_addr_0;
+  reg        [11:0]   w_addr_1;
+  reg        [11:0]   w_addr_2;
+  reg        [11:0]   w_addr_3;
+  reg        [11:0]   w_addr_4;
+  reg        [11:0]   w_addr_5;
+  reg        [11:0]   w_addr_6;
+  reg        [11:0]   w_addr_7;
+  reg        [11:0]   w_addr_8;
+  reg        [11:0]   w_addr_9;
+  reg        [11:0]   w_addr_10;
+  reg        [11:0]   w_addr_11;
+  reg        [11:0]   w_addr_12;
+  reg        [11:0]   w_addr_13;
+  reg        [11:0]   w_addr_14;
+  reg        [11:0]   w_addr_15;
+  wire                when_DataArrange_l115;
+  wire                when_DataArrange_l115_1;
+  wire                when_DataArrange_l115_2;
+  wire                when_DataArrange_l115_3;
+  wire                when_DataArrange_l115_4;
+  wire                when_DataArrange_l115_5;
+  wire                when_DataArrange_l115_6;
+  wire                when_DataArrange_l115_7;
+  wire                when_DataArrange_l115_8;
+  wire                when_DataArrange_l115_9;
+  wire                when_DataArrange_l115_10;
+  wire                when_DataArrange_l115_11;
+  wire                when_DataArrange_l115_12;
+  wire                when_DataArrange_l115_13;
+  wire                when_DataArrange_l115_14;
+  wire                when_DataArrange_l115_15;
+  reg        [15:0]   r_addr;
+  wire                r_en;
+  reg                 r_en_delay_1;
+  reg                 r_en_delay_2;
+  reg        [15:0]   channel_cnt_count;
+  reg                 channel_cnt_valid;
+  wire                when_WaCounter_l12_5;
+  wire                when_WaCounter_l17_5;
+  reg        [11:0]   channel_offset_cnt_count;
+  reg                 channel_offset_cnt_valid;
+  wire                when_WaCounter_l12_6;
+  wire                when_DataArrange_l135;
+  wire                when_DataArrange_l137;
+  wire                mData_fire;
+  reg        [7:0]    channelOutCnt_count;
+  reg                 channelOutCnt_valid;
+  wire                when_WaCounter_l12_7;
+  wire                mData_fire_1;
+  wire                when_WaCounter_l17_6;
+  reg        [9:0]    colOutCnt_count;
+  reg                 colOutCnt_valid;
+  wire                when_WaCounter_l12_8;
+  wire                mData_fire_2;
+  wire                when_WaCounter_l17_7;
+  reg        [9:0]    rowOutCnt_count;
+  reg                 rowOutCnt_valid;
+  wire                when_WaCounter_l12_9;
+  wire                when_DataArrange_l169;
+  `ifndef SYNTHESIS
+  reg [79:0] dataArrangeFsm_currentState_string;
+  reg [79:0] dataArrangeFsm_nextState_string;
+  `endif
+
+
+  assign _zz_when_WaCounter_l12_1 = (channelTimes - 8'h01);
+  assign _zz_when_WaCounter_l12_2 = (colTimes - 10'h001);
+  assign _zz_when_WaCounter_l12_3 = (rowTimes - 10'h001);
+  assign _zz_when_DataArrange_l115 = {12'd0, w_addr_0};
+  assign _zz_when_DataArrange_l115_1 = (_zz_when_DataArrange_l115_2 - 24'h000001);
+  assign _zz_when_DataArrange_l115_2 = (_zz_when_DataArrange_l115_3 >>> 4);
+  assign _zz_when_DataArrange_l115_3 = (_zz_when_DataArrange_l115_4 * channelTimes);
+  assign _zz_when_DataArrange_l115_4 = (colTimes * rowTimes);
+  assign _zz_when_DataArrange_l115_1_1 = {12'd0, w_addr_1};
+  assign _zz_when_DataArrange_l115_1_2 = (_zz_when_DataArrange_l115_1_3 - 24'h000001);
+  assign _zz_when_DataArrange_l115_1_3 = (_zz_when_DataArrange_l115_1_4 >>> 4);
+  assign _zz_when_DataArrange_l115_1_4 = (_zz_when_DataArrange_l115_1_5 * channelTimes);
+  assign _zz_when_DataArrange_l115_1_5 = (colTimes * rowTimes);
+  assign _zz_when_DataArrange_l115_2_1 = {12'd0, w_addr_2};
+  assign _zz_when_DataArrange_l115_2_2 = (_zz_when_DataArrange_l115_2_3 - 24'h000001);
+  assign _zz_when_DataArrange_l115_2_3 = (_zz_when_DataArrange_l115_2_4 >>> 4);
+  assign _zz_when_DataArrange_l115_2_4 = (_zz_when_DataArrange_l115_2_5 * channelTimes);
+  assign _zz_when_DataArrange_l115_2_5 = (colTimes * rowTimes);
+  assign _zz_when_DataArrange_l115_3_1 = {12'd0, w_addr_3};
+  assign _zz_when_DataArrange_l115_3_2 = (_zz_when_DataArrange_l115_3_3 - 24'h000001);
+  assign _zz_when_DataArrange_l115_3_3 = (_zz_when_DataArrange_l115_3_4 >>> 4);
+  assign _zz_when_DataArrange_l115_3_4 = (_zz_when_DataArrange_l115_3_5 * channelTimes);
+  assign _zz_when_DataArrange_l115_3_5 = (colTimes * rowTimes);
+  assign _zz_when_DataArrange_l115_4_1 = {12'd0, w_addr_4};
+  assign _zz_when_DataArrange_l115_4_2 = (_zz_when_DataArrange_l115_4_3 - 24'h000001);
+  assign _zz_when_DataArrange_l115_4_3 = (_zz_when_DataArrange_l115_4_4 >>> 4);
+  assign _zz_when_DataArrange_l115_4_4 = (_zz_when_DataArrange_l115_4_5 * channelTimes);
+  assign _zz_when_DataArrange_l115_4_5 = (colTimes * rowTimes);
+  assign _zz_when_DataArrange_l115_5 = {12'd0, w_addr_5};
+  assign _zz_when_DataArrange_l115_5_1 = (_zz_when_DataArrange_l115_5_2 - 24'h000001);
+  assign _zz_when_DataArrange_l115_5_2 = (_zz_when_DataArrange_l115_5_3 >>> 4);
+  assign _zz_when_DataArrange_l115_5_3 = (_zz_when_DataArrange_l115_5_4 * channelTimes);
+  assign _zz_when_DataArrange_l115_5_4 = (colTimes * rowTimes);
+  assign _zz_when_DataArrange_l115_6 = {12'd0, w_addr_6};
+  assign _zz_when_DataArrange_l115_6_1 = (_zz_when_DataArrange_l115_6_2 - 24'h000001);
+  assign _zz_when_DataArrange_l115_6_2 = (_zz_when_DataArrange_l115_6_3 >>> 4);
+  assign _zz_when_DataArrange_l115_6_3 = (_zz_when_DataArrange_l115_6_4 * channelTimes);
+  assign _zz_when_DataArrange_l115_6_4 = (colTimes * rowTimes);
+  assign _zz_when_DataArrange_l115_7 = {12'd0, w_addr_7};
+  assign _zz_when_DataArrange_l115_7_1 = (_zz_when_DataArrange_l115_7_2 - 24'h000001);
+  assign _zz_when_DataArrange_l115_7_2 = (_zz_when_DataArrange_l115_7_3 >>> 4);
+  assign _zz_when_DataArrange_l115_7_3 = (_zz_when_DataArrange_l115_7_4 * channelTimes);
+  assign _zz_when_DataArrange_l115_7_4 = (colTimes * rowTimes);
+  assign _zz_when_DataArrange_l115_8 = {12'd0, w_addr_8};
+  assign _zz_when_DataArrange_l115_8_1 = (_zz_when_DataArrange_l115_8_2 - 24'h000001);
+  assign _zz_when_DataArrange_l115_8_2 = (_zz_when_DataArrange_l115_8_3 >>> 4);
+  assign _zz_when_DataArrange_l115_8_3 = (_zz_when_DataArrange_l115_8_4 * channelTimes);
+  assign _zz_when_DataArrange_l115_8_4 = (colTimes * rowTimes);
+  assign _zz_when_DataArrange_l115_9 = {12'd0, w_addr_9};
+  assign _zz_when_DataArrange_l115_9_1 = (_zz_when_DataArrange_l115_9_2 - 24'h000001);
+  assign _zz_when_DataArrange_l115_9_2 = (_zz_when_DataArrange_l115_9_3 >>> 4);
+  assign _zz_when_DataArrange_l115_9_3 = (_zz_when_DataArrange_l115_9_4 * channelTimes);
+  assign _zz_when_DataArrange_l115_9_4 = (colTimes * rowTimes);
+  assign _zz_when_DataArrange_l115_10 = {12'd0, w_addr_10};
+  assign _zz_when_DataArrange_l115_10_1 = (_zz_when_DataArrange_l115_10_2 - 24'h000001);
+  assign _zz_when_DataArrange_l115_10_2 = (_zz_when_DataArrange_l115_10_3 >>> 4);
+  assign _zz_when_DataArrange_l115_10_3 = (_zz_when_DataArrange_l115_10_4 * channelTimes);
+  assign _zz_when_DataArrange_l115_10_4 = (colTimes * rowTimes);
+  assign _zz_when_DataArrange_l115_11 = {12'd0, w_addr_11};
+  assign _zz_when_DataArrange_l115_11_1 = (_zz_when_DataArrange_l115_11_2 - 24'h000001);
+  assign _zz_when_DataArrange_l115_11_2 = (_zz_when_DataArrange_l115_11_3 >>> 4);
+  assign _zz_when_DataArrange_l115_11_3 = (_zz_when_DataArrange_l115_11_4 * channelTimes);
+  assign _zz_when_DataArrange_l115_11_4 = (colTimes * rowTimes);
+  assign _zz_when_DataArrange_l115_12 = {12'd0, w_addr_12};
+  assign _zz_when_DataArrange_l115_12_1 = (_zz_when_DataArrange_l115_12_2 - 24'h000001);
+  assign _zz_when_DataArrange_l115_12_2 = (_zz_when_DataArrange_l115_12_3 >>> 4);
+  assign _zz_when_DataArrange_l115_12_3 = (_zz_when_DataArrange_l115_12_4 * channelTimes);
+  assign _zz_when_DataArrange_l115_12_4 = (colTimes * rowTimes);
+  assign _zz_when_DataArrange_l115_13 = {12'd0, w_addr_13};
+  assign _zz_when_DataArrange_l115_13_1 = (_zz_when_DataArrange_l115_13_2 - 24'h000001);
+  assign _zz_when_DataArrange_l115_13_2 = (_zz_when_DataArrange_l115_13_3 >>> 4);
+  assign _zz_when_DataArrange_l115_13_3 = (_zz_when_DataArrange_l115_13_4 * channelTimes);
+  assign _zz_when_DataArrange_l115_13_4 = (colTimes * rowTimes);
+  assign _zz_when_DataArrange_l115_14 = {12'd0, w_addr_14};
+  assign _zz_when_DataArrange_l115_14_1 = (_zz_when_DataArrange_l115_14_2 - 24'h000001);
+  assign _zz_when_DataArrange_l115_14_2 = (_zz_when_DataArrange_l115_14_3 >>> 4);
+  assign _zz_when_DataArrange_l115_14_3 = (_zz_when_DataArrange_l115_14_4 * channelTimes);
+  assign _zz_when_DataArrange_l115_14_4 = (colTimes * rowTimes);
+  assign _zz_when_DataArrange_l115_15 = {12'd0, w_addr_15};
+  assign _zz_when_DataArrange_l115_15_1 = (_zz_when_DataArrange_l115_15_2 - 24'h000001);
+  assign _zz_when_DataArrange_l115_15_2 = (_zz_when_DataArrange_l115_15_3 >>> 4);
+  assign _zz_when_DataArrange_l115_15_3 = (_zz_when_DataArrange_l115_15_4 * channelTimes);
+  assign _zz_when_DataArrange_l115_15_4 = (colTimes * rowTimes);
+  assign _zz_when_WaCounter_l12_5 = (_zz_when_WaCounter_l12_5_1 - 16'h0001);
+  assign _zz_when_WaCounter_l12_5_1 = (_zz_when_WaCounter_l12_5_2 >>> 4);
+  assign _zz_when_WaCounter_l12_5_2 = (rowNumIn * colNumIn);
+  assign _zz_when_WaCounter_l12_6 = (channelOut - 12'h001);
+  assign _zz_r_addr = (channel_offset_cnt_count + 12'h001);
+  assign _zz_r_addr_1 = {4'd0, channelOut};
+  assign _zz_when_WaCounter_l12_7 = (channelTimes - 8'h01);
+  assign _zz_when_WaCounter_l12_8 = (colTimes - 10'h001);
+  assign _zz_when_WaCounter_l12_9 = (rowTimes - 10'h001);
+  StreamFifo_1 res_fifo (
+    .io_push_valid   (r_en_delay_2                   ), //i
+    .io_push_ready   (res_fifo_io_push_ready         ), //o
+    .io_push_payload (res_fifo_io_push_payload[127:0]), //i
+    .io_pop_valid    (res_fifo_io_pop_valid          ), //o
+    .io_pop_ready    (mData_ready                    ), //i
+    .io_pop_payload  (res_fifo_io_pop_payload[127:0] ), //o
+    .io_flush        (1'b0                           ), //i
+    .io_availability (res_fifo_io_availability[3:0]  ), //o
+    .clk             (clk                            ), //i
+    .reset           (reset                          ), //i
+    .softReset       (softReset                      )  //i
+  );
+  sdpram_147 dataRam_0 (
+    .doutb (dataRam_0_doutb[7:0] ), //o
+    .addra (dataRam_0_addra[11:0]), //i
+    .addrb (dataRam_0_addrb[15:0]), //i
+    .dina  (dataRam_0_dina[127:0]), //i
+    .ena   (1'b1                 ), //i
+    .enb   (1'b1                 ), //i
+    .wea   (dataRam_0_wea        ), //i
+    .clk   (clk                  )  //i
+  );
+  sdpram_147 dataRam_1 (
+    .doutb (dataRam_1_doutb[7:0] ), //o
+    .addra (dataRam_1_addra[11:0]), //i
+    .addrb (dataRam_1_addrb[15:0]), //i
+    .dina  (dataRam_1_dina[127:0]), //i
+    .ena   (1'b1                 ), //i
+    .enb   (1'b1                 ), //i
+    .wea   (dataRam_1_wea        ), //i
+    .clk   (clk                  )  //i
+  );
+  sdpram_147 dataRam_2 (
+    .doutb (dataRam_2_doutb[7:0] ), //o
+    .addra (dataRam_2_addra[11:0]), //i
+    .addrb (dataRam_2_addrb[15:0]), //i
+    .dina  (dataRam_2_dina[127:0]), //i
+    .ena   (1'b1                 ), //i
+    .enb   (1'b1                 ), //i
+    .wea   (dataRam_2_wea        ), //i
+    .clk   (clk                  )  //i
+  );
+  sdpram_147 dataRam_3 (
+    .doutb (dataRam_3_doutb[7:0] ), //o
+    .addra (dataRam_3_addra[11:0]), //i
+    .addrb (dataRam_3_addrb[15:0]), //i
+    .dina  (dataRam_3_dina[127:0]), //i
+    .ena   (1'b1                 ), //i
+    .enb   (1'b1                 ), //i
+    .wea   (dataRam_3_wea        ), //i
+    .clk   (clk                  )  //i
+  );
+  sdpram_147 dataRam_4 (
+    .doutb (dataRam_4_doutb[7:0] ), //o
+    .addra (dataRam_4_addra[11:0]), //i
+    .addrb (dataRam_4_addrb[15:0]), //i
+    .dina  (dataRam_4_dina[127:0]), //i
+    .ena   (1'b1                 ), //i
+    .enb   (1'b1                 ), //i
+    .wea   (dataRam_4_wea        ), //i
+    .clk   (clk                  )  //i
+  );
+  sdpram_147 dataRam_5 (
+    .doutb (dataRam_5_doutb[7:0] ), //o
+    .addra (dataRam_5_addra[11:0]), //i
+    .addrb (dataRam_5_addrb[15:0]), //i
+    .dina  (dataRam_5_dina[127:0]), //i
+    .ena   (1'b1                 ), //i
+    .enb   (1'b1                 ), //i
+    .wea   (dataRam_5_wea        ), //i
+    .clk   (clk                  )  //i
+  );
+  sdpram_147 dataRam_6 (
+    .doutb (dataRam_6_doutb[7:0] ), //o
+    .addra (dataRam_6_addra[11:0]), //i
+    .addrb (dataRam_6_addrb[15:0]), //i
+    .dina  (dataRam_6_dina[127:0]), //i
+    .ena   (1'b1                 ), //i
+    .enb   (1'b1                 ), //i
+    .wea   (dataRam_6_wea        ), //i
+    .clk   (clk                  )  //i
+  );
+  sdpram_147 dataRam_7 (
+    .doutb (dataRam_7_doutb[7:0] ), //o
+    .addra (dataRam_7_addra[11:0]), //i
+    .addrb (dataRam_7_addrb[15:0]), //i
+    .dina  (dataRam_7_dina[127:0]), //i
+    .ena   (1'b1                 ), //i
+    .enb   (1'b1                 ), //i
+    .wea   (dataRam_7_wea        ), //i
+    .clk   (clk                  )  //i
+  );
+  sdpram_147 dataRam_8 (
+    .doutb (dataRam_8_doutb[7:0] ), //o
+    .addra (dataRam_8_addra[11:0]), //i
+    .addrb (dataRam_8_addrb[15:0]), //i
+    .dina  (dataRam_8_dina[127:0]), //i
+    .ena   (1'b1                 ), //i
+    .enb   (1'b1                 ), //i
+    .wea   (dataRam_8_wea        ), //i
+    .clk   (clk                  )  //i
+  );
+  sdpram_147 dataRam_9 (
+    .doutb (dataRam_9_doutb[7:0] ), //o
+    .addra (dataRam_9_addra[11:0]), //i
+    .addrb (dataRam_9_addrb[15:0]), //i
+    .dina  (dataRam_9_dina[127:0]), //i
+    .ena   (1'b1                 ), //i
+    .enb   (1'b1                 ), //i
+    .wea   (dataRam_9_wea        ), //i
+    .clk   (clk                  )  //i
+  );
+  sdpram_147 dataRam_10 (
+    .doutb (dataRam_10_doutb[7:0] ), //o
+    .addra (dataRam_10_addra[11:0]), //i
+    .addrb (dataRam_10_addrb[15:0]), //i
+    .dina  (dataRam_10_dina[127:0]), //i
+    .ena   (1'b1                  ), //i
+    .enb   (1'b1                  ), //i
+    .wea   (dataRam_10_wea        ), //i
+    .clk   (clk                   )  //i
+  );
+  sdpram_147 dataRam_11 (
+    .doutb (dataRam_11_doutb[7:0] ), //o
+    .addra (dataRam_11_addra[11:0]), //i
+    .addrb (dataRam_11_addrb[15:0]), //i
+    .dina  (dataRam_11_dina[127:0]), //i
+    .ena   (1'b1                  ), //i
+    .enb   (1'b1                  ), //i
+    .wea   (dataRam_11_wea        ), //i
+    .clk   (clk                   )  //i
+  );
+  sdpram_147 dataRam_12 (
+    .doutb (dataRam_12_doutb[7:0] ), //o
+    .addra (dataRam_12_addra[11:0]), //i
+    .addrb (dataRam_12_addrb[15:0]), //i
+    .dina  (dataRam_12_dina[127:0]), //i
+    .ena   (1'b1                  ), //i
+    .enb   (1'b1                  ), //i
+    .wea   (dataRam_12_wea        ), //i
+    .clk   (clk                   )  //i
+  );
+  sdpram_147 dataRam_13 (
+    .doutb (dataRam_13_doutb[7:0] ), //o
+    .addra (dataRam_13_addra[11:0]), //i
+    .addrb (dataRam_13_addrb[15:0]), //i
+    .dina  (dataRam_13_dina[127:0]), //i
+    .ena   (1'b1                  ), //i
+    .enb   (1'b1                  ), //i
+    .wea   (dataRam_13_wea        ), //i
+    .clk   (clk                   )  //i
+  );
+  sdpram_147 dataRam_14 (
+    .doutb (dataRam_14_doutb[7:0] ), //o
+    .addra (dataRam_14_addra[11:0]), //i
+    .addrb (dataRam_14_addrb[15:0]), //i
+    .dina  (dataRam_14_dina[127:0]), //i
+    .ena   (1'b1                  ), //i
+    .enb   (1'b1                  ), //i
+    .wea   (dataRam_14_wea        ), //i
+    .clk   (clk                   )  //i
+  );
+  sdpram_147 dataRam_15 (
+    .doutb (dataRam_15_doutb[7:0] ), //o
+    .addra (dataRam_15_addra[11:0]), //i
+    .addrb (dataRam_15_addrb[15:0]), //i
+    .dina  (dataRam_15_dina[127:0]), //i
+    .ena   (1'b1                  ), //i
+    .enb   (1'b1                  ), //i
+    .wea   (dataRam_15_wea        ), //i
+    .clk   (clk                   )  //i
+  );
+  `ifndef SYNTHESIS
+  always @(*) begin
+    case(dataArrangeFsm_currentState)
+      DataArrangeEnum_IDLE : dataArrangeFsm_currentState_string = "IDLE      ";
+      DataArrangeEnum_INIT : dataArrangeFsm_currentState_string = "INIT      ";
+      DataArrangeEnum_DATA_READY : dataArrangeFsm_currentState_string = "DATA_READY";
+      DataArrangeEnum_ARRANGE : dataArrangeFsm_currentState_string = "ARRANGE   ";
+      default : dataArrangeFsm_currentState_string = "??????????";
+    endcase
+  end
+  always @(*) begin
+    case(dataArrangeFsm_nextState)
+      DataArrangeEnum_IDLE : dataArrangeFsm_nextState_string = "IDLE      ";
+      DataArrangeEnum_INIT : dataArrangeFsm_nextState_string = "INIT      ";
+      DataArrangeEnum_DATA_READY : dataArrangeFsm_nextState_string = "DATA_READY";
+      DataArrangeEnum_ARRANGE : dataArrangeFsm_nextState_string = "ARRANGE   ";
+      default : dataArrangeFsm_nextState_string = "??????????";
+    endcase
+  end
+  `endif
+
+  always @(*) begin
+    (* parallel_case *)
+    case(1) // synthesis parallel_case
+      (((dataArrangeFsm_currentState) & DataArrangeEnum_IDLE) == DataArrangeEnum_IDLE) : begin
+        if(dataArrangeFsm_start) begin
+          dataArrangeFsm_nextState = DataArrangeEnum_INIT;
+        end else begin
+          dataArrangeFsm_nextState = DataArrangeEnum_IDLE;
+        end
+      end
+      (((dataArrangeFsm_currentState) & DataArrangeEnum_INIT) == DataArrangeEnum_INIT) : begin
+        if(dataArrangeFsm_initEnd) begin
+          dataArrangeFsm_nextState = DataArrangeEnum_DATA_READY;
+        end else begin
+          dataArrangeFsm_nextState = DataArrangeEnum_INIT;
+        end
+      end
+      (((dataArrangeFsm_currentState) & DataArrangeEnum_DATA_READY) == DataArrangeEnum_DATA_READY) : begin
+        if(dataArrangeFsm_dataReady) begin
+          dataArrangeFsm_nextState = DataArrangeEnum_ARRANGE;
+        end else begin
+          dataArrangeFsm_nextState = DataArrangeEnum_DATA_READY;
+        end
+      end
+      default : begin
+        if(dataArrangeFsm_arrangeEnd) begin
+          dataArrangeFsm_nextState = DataArrangeEnum_IDLE;
+        end else begin
+          dataArrangeFsm_nextState = DataArrangeEnum_ARRANGE;
+        end
+      end
+    endcase
+  end
+
+  assign dataArrangeFsm_start = (enArrange && start);
+  assign when_WaCounter_l17 = ((dataArrangeFsm_currentState & DataArrangeEnum_INIT) != 4'b0000);
+  assign when_WaCounter_l12 = (initCnt_count == 3'b111);
+  always @(*) begin
+    if(when_WaCounter_l12) begin
+      initCnt_valid = 1'b1;
+    end else begin
+      initCnt_valid = 1'b0;
+    end
+    if(when_DataArrange_l169) begin
+      initCnt_valid = 1'b0;
+    end
+  end
+
+  assign dataArrangeFsm_initEnd = initCnt_valid;
+  assign when_DataArrange_l77 = ((dataArrangeFsm_currentState & DataArrangeEnum_INIT) != 4'b0000);
+  assign when_DataArrange_l78 = ((dataArrangeFsm_currentState & DataArrangeEnum_INIT) != 4'b0000);
+  assign when_DataArrange_l79 = ((dataArrangeFsm_currentState & DataArrangeEnum_INIT) != 4'b0000);
+  assign sData_fire = (sData_valid && sData_ready);
+  assign when_WaCounter_l17_1 = (((dataArrangeFsm_currentState & DataArrangeEnum_DATA_READY) != 4'b0000) && sData_fire);
+  assign when_WaCounter_l12_1 = (channelCnt_count == _zz_when_WaCounter_l12_1);
+  always @(*) begin
+    if(when_WaCounter_l12_1) begin
+      channelCnt_valid = 1'b1;
+    end else begin
+      channelCnt_valid = 1'b0;
+    end
+    if(when_DataArrange_l169) begin
+      channelCnt_valid = 1'b0;
+    end
+  end
+
+  assign sData_fire_1 = (sData_valid && sData_ready);
+  assign when_WaCounter_l17_2 = (channelCnt_valid && sData_fire_1);
+  assign when_WaCounter_l12_2 = (colCnt_count == _zz_when_WaCounter_l12_2);
+  always @(*) begin
+    if(when_WaCounter_l12_2) begin
+      colCnt_valid = 1'b1;
+    end else begin
+      colCnt_valid = 1'b0;
+    end
+    if(when_DataArrange_l169) begin
+      colCnt_valid = 1'b0;
+    end
+  end
+
+  assign sData_fire_2 = (sData_valid && sData_ready);
+  assign when_WaCounter_l17_3 = ((channelCnt_valid && colCnt_valid) && sData_fire_2);
+  assign when_WaCounter_l12_3 = (rowCnt_count == _zz_when_WaCounter_l12_3);
+  always @(*) begin
+    if(when_WaCounter_l12_3) begin
+      rowCnt_valid = 1'b1;
+    end else begin
+      rowCnt_valid = 1'b0;
+    end
+    if(when_DataArrange_l169) begin
+      rowCnt_valid = 1'b0;
+    end
+  end
+
+  assign sData_fire_3 = (sData_valid && sData_ready);
+  assign when_WaCounter_l17_4 = (channelCnt_valid && sData_fire_3);
+  assign when_WaCounter_l12_4 = (w_cnt_count == 4'b1111);
+  always @(*) begin
+    if(when_WaCounter_l12_4) begin
+      w_cnt_valid = 1'b1;
+    end else begin
+      w_cnt_valid = 1'b0;
+    end
+    if(when_DataArrange_l169) begin
+      w_cnt_valid = 1'b0;
+    end
+  end
+
+  assign when_DataArrange_l87 = ((dataArrangeFsm_currentState & DataArrangeEnum_DATA_READY) != 4'b0000);
+  always @(*) begin
+    if(when_DataArrange_l87) begin
+      sData_ready = 1'b1;
+    end else begin
+      sData_ready = 1'b0;
+    end
+  end
+
+  assign sData_fire_4 = (sData_valid && sData_ready);
+  assign dataArrangeFsm_dataReady = (((rowCnt_valid && colCnt_valid) && channelCnt_valid) && sData_fire_4);
+  assign sData_fire_5 = (sData_valid && sData_ready);
+  assign when_DataArrange_l100 = (sData_fire_5 && ((dataArrangeFsm_currentState & DataArrangeEnum_DATA_READY) != 4'b0000));
+  assign when_DataArrange_l102 = (w_cnt_count == 4'b0000);
+  always @(*) begin
+    if(when_DataArrange_l100) begin
+      if(when_DataArrange_l102) begin
+        weav_0 = 1'b1;
+      end else begin
+        weav_0 = 1'b0;
+      end
+    end else begin
+      weav_0 = 1'b0;
+    end
+  end
+
+  assign when_DataArrange_l102_1 = (w_cnt_count == 4'b0001);
+  always @(*) begin
+    if(when_DataArrange_l100) begin
+      if(when_DataArrange_l102_1) begin
+        weav_1 = 1'b1;
+      end else begin
+        weav_1 = 1'b0;
+      end
+    end else begin
+      weav_1 = 1'b0;
+    end
+  end
+
+  assign when_DataArrange_l102_2 = (w_cnt_count == 4'b0010);
+  always @(*) begin
+    if(when_DataArrange_l100) begin
+      if(when_DataArrange_l102_2) begin
+        weav_2 = 1'b1;
+      end else begin
+        weav_2 = 1'b0;
+      end
+    end else begin
+      weav_2 = 1'b0;
+    end
+  end
+
+  assign when_DataArrange_l102_3 = (w_cnt_count == 4'b0011);
+  always @(*) begin
+    if(when_DataArrange_l100) begin
+      if(when_DataArrange_l102_3) begin
+        weav_3 = 1'b1;
+      end else begin
+        weav_3 = 1'b0;
+      end
+    end else begin
+      weav_3 = 1'b0;
+    end
+  end
+
+  assign when_DataArrange_l102_4 = (w_cnt_count == 4'b0100);
+  always @(*) begin
+    if(when_DataArrange_l100) begin
+      if(when_DataArrange_l102_4) begin
+        weav_4 = 1'b1;
+      end else begin
+        weav_4 = 1'b0;
+      end
+    end else begin
+      weav_4 = 1'b0;
+    end
+  end
+
+  assign when_DataArrange_l102_5 = (w_cnt_count == 4'b0101);
+  always @(*) begin
+    if(when_DataArrange_l100) begin
+      if(when_DataArrange_l102_5) begin
+        weav_5 = 1'b1;
+      end else begin
+        weav_5 = 1'b0;
+      end
+    end else begin
+      weav_5 = 1'b0;
+    end
+  end
+
+  assign when_DataArrange_l102_6 = (w_cnt_count == 4'b0110);
+  always @(*) begin
+    if(when_DataArrange_l100) begin
+      if(when_DataArrange_l102_6) begin
+        weav_6 = 1'b1;
+      end else begin
+        weav_6 = 1'b0;
+      end
+    end else begin
+      weav_6 = 1'b0;
+    end
+  end
+
+  assign when_DataArrange_l102_7 = (w_cnt_count == 4'b0111);
+  always @(*) begin
+    if(when_DataArrange_l100) begin
+      if(when_DataArrange_l102_7) begin
+        weav_7 = 1'b1;
+      end else begin
+        weav_7 = 1'b0;
+      end
+    end else begin
+      weav_7 = 1'b0;
+    end
+  end
+
+  assign when_DataArrange_l102_8 = (w_cnt_count == 4'b1000);
+  always @(*) begin
+    if(when_DataArrange_l100) begin
+      if(when_DataArrange_l102_8) begin
+        weav_8 = 1'b1;
+      end else begin
+        weav_8 = 1'b0;
+      end
+    end else begin
+      weav_8 = 1'b0;
+    end
+  end
+
+  assign when_DataArrange_l102_9 = (w_cnt_count == 4'b1001);
+  always @(*) begin
+    if(when_DataArrange_l100) begin
+      if(when_DataArrange_l102_9) begin
+        weav_9 = 1'b1;
+      end else begin
+        weav_9 = 1'b0;
+      end
+    end else begin
+      weav_9 = 1'b0;
+    end
+  end
+
+  assign when_DataArrange_l102_10 = (w_cnt_count == 4'b1010);
+  always @(*) begin
+    if(when_DataArrange_l100) begin
+      if(when_DataArrange_l102_10) begin
+        weav_10 = 1'b1;
+      end else begin
+        weav_10 = 1'b0;
+      end
+    end else begin
+      weav_10 = 1'b0;
+    end
+  end
+
+  assign when_DataArrange_l102_11 = (w_cnt_count == 4'b1011);
+  always @(*) begin
+    if(when_DataArrange_l100) begin
+      if(when_DataArrange_l102_11) begin
+        weav_11 = 1'b1;
+      end else begin
+        weav_11 = 1'b0;
+      end
+    end else begin
+      weav_11 = 1'b0;
+    end
+  end
+
+  assign when_DataArrange_l102_12 = (w_cnt_count == 4'b1100);
+  always @(*) begin
+    if(when_DataArrange_l100) begin
+      if(when_DataArrange_l102_12) begin
+        weav_12 = 1'b1;
+      end else begin
+        weav_12 = 1'b0;
+      end
+    end else begin
+      weav_12 = 1'b0;
+    end
+  end
+
+  assign when_DataArrange_l102_13 = (w_cnt_count == 4'b1101);
+  always @(*) begin
+    if(when_DataArrange_l100) begin
+      if(when_DataArrange_l102_13) begin
+        weav_13 = 1'b1;
+      end else begin
+        weav_13 = 1'b0;
+      end
+    end else begin
+      weav_13 = 1'b0;
+    end
+  end
+
+  assign when_DataArrange_l102_14 = (w_cnt_count == 4'b1110);
+  always @(*) begin
+    if(when_DataArrange_l100) begin
+      if(when_DataArrange_l102_14) begin
+        weav_14 = 1'b1;
+      end else begin
+        weav_14 = 1'b0;
+      end
+    end else begin
+      weav_14 = 1'b0;
+    end
+  end
+
+  assign when_DataArrange_l102_15 = (w_cnt_count == 4'b1111);
+  always @(*) begin
+    if(when_DataArrange_l100) begin
+      if(when_DataArrange_l102_15) begin
+        weav_15 = 1'b1;
+      end else begin
+        weav_15 = 1'b0;
+      end
+    end else begin
+      weav_15 = 1'b0;
+    end
+  end
+
+  assign when_DataArrange_l115 = (_zz_when_DataArrange_l115 == _zz_when_DataArrange_l115_1);
+  assign when_DataArrange_l115_1 = (_zz_when_DataArrange_l115_1_1 == _zz_when_DataArrange_l115_1_2);
+  assign when_DataArrange_l115_2 = (_zz_when_DataArrange_l115_2_1 == _zz_when_DataArrange_l115_2_2);
+  assign when_DataArrange_l115_3 = (_zz_when_DataArrange_l115_3_1 == _zz_when_DataArrange_l115_3_2);
+  assign when_DataArrange_l115_4 = (_zz_when_DataArrange_l115_4_1 == _zz_when_DataArrange_l115_4_2);
+  assign when_DataArrange_l115_5 = (_zz_when_DataArrange_l115_5 == _zz_when_DataArrange_l115_5_1);
+  assign when_DataArrange_l115_6 = (_zz_when_DataArrange_l115_6 == _zz_when_DataArrange_l115_6_1);
+  assign when_DataArrange_l115_7 = (_zz_when_DataArrange_l115_7 == _zz_when_DataArrange_l115_7_1);
+  assign when_DataArrange_l115_8 = (_zz_when_DataArrange_l115_8 == _zz_when_DataArrange_l115_8_1);
+  assign when_DataArrange_l115_9 = (_zz_when_DataArrange_l115_9 == _zz_when_DataArrange_l115_9_1);
+  assign when_DataArrange_l115_10 = (_zz_when_DataArrange_l115_10 == _zz_when_DataArrange_l115_10_1);
+  assign when_DataArrange_l115_11 = (_zz_when_DataArrange_l115_11 == _zz_when_DataArrange_l115_11_1);
+  assign when_DataArrange_l115_12 = (_zz_when_DataArrange_l115_12 == _zz_when_DataArrange_l115_12_1);
+  assign when_DataArrange_l115_13 = (_zz_when_DataArrange_l115_13 == _zz_when_DataArrange_l115_13_1);
+  assign when_DataArrange_l115_14 = (_zz_when_DataArrange_l115_14 == _zz_when_DataArrange_l115_14_1);
+  assign when_DataArrange_l115_15 = (_zz_when_DataArrange_l115_15 == _zz_when_DataArrange_l115_15_1);
+  assign mData_valid = res_fifo_io_pop_valid;
+  assign mData_payload = res_fifo_io_pop_payload;
+  assign r_en = (((dataArrangeFsm_currentState & DataArrangeEnum_ARRANGE) != 4'b0000) && (4'b0100 < res_fifo_io_availability));
+  assign when_WaCounter_l12_5 = (channel_cnt_count == _zz_when_WaCounter_l12_5);
+  always @(*) begin
+    if(when_WaCounter_l12_5) begin
+      channel_cnt_valid = 1'b1;
+    end else begin
+      channel_cnt_valid = 1'b0;
+    end
+    if(when_DataArrange_l169) begin
+      channel_cnt_valid = 1'b0;
+    end
+  end
+
+  assign when_WaCounter_l17_5 = (channel_cnt_valid && r_en);
+  assign when_WaCounter_l12_6 = (channel_offset_cnt_count == _zz_when_WaCounter_l12_6);
+  always @(*) begin
+    if(when_WaCounter_l12_6) begin
+      channel_offset_cnt_valid = 1'b1;
+    end else begin
+      channel_offset_cnt_valid = 1'b0;
+    end
+    if(when_DataArrange_l169) begin
+      channel_offset_cnt_valid = 1'b0;
+    end
+  end
+
+  assign when_DataArrange_l135 = (channel_cnt_valid && channel_offset_cnt_valid);
+  assign when_DataArrange_l137 = (channel_cnt_valid && r_en);
+  assign dataRam_0_wea = weav_0;
+  assign dataRam_0_addra = w_addr_0;
+  assign dataRam_0_dina = sData_payload;
+  assign dataRam_0_addrb = r_addr;
+  always @(*) begin
+    res_fifo_io_push_payload[7 : 0] = dataRam_0_doutb;
+    res_fifo_io_push_payload[15 : 8] = dataRam_1_doutb;
+    res_fifo_io_push_payload[23 : 16] = dataRam_2_doutb;
+    res_fifo_io_push_payload[31 : 24] = dataRam_3_doutb;
+    res_fifo_io_push_payload[39 : 32] = dataRam_4_doutb;
+    res_fifo_io_push_payload[47 : 40] = dataRam_5_doutb;
+    res_fifo_io_push_payload[55 : 48] = dataRam_6_doutb;
+    res_fifo_io_push_payload[63 : 56] = dataRam_7_doutb;
+    res_fifo_io_push_payload[71 : 64] = dataRam_8_doutb;
+    res_fifo_io_push_payload[79 : 72] = dataRam_9_doutb;
+    res_fifo_io_push_payload[87 : 80] = dataRam_10_doutb;
+    res_fifo_io_push_payload[95 : 88] = dataRam_11_doutb;
+    res_fifo_io_push_payload[103 : 96] = dataRam_12_doutb;
+    res_fifo_io_push_payload[111 : 104] = dataRam_13_doutb;
+    res_fifo_io_push_payload[119 : 112] = dataRam_14_doutb;
+    res_fifo_io_push_payload[127 : 120] = dataRam_15_doutb;
+  end
+
+  assign dataRam_1_wea = weav_1;
+  assign dataRam_1_addra = w_addr_1;
+  assign dataRam_1_dina = sData_payload;
+  assign dataRam_1_addrb = r_addr;
+  assign dataRam_2_wea = weav_2;
+  assign dataRam_2_addra = w_addr_2;
+  assign dataRam_2_dina = sData_payload;
+  assign dataRam_2_addrb = r_addr;
+  assign dataRam_3_wea = weav_3;
+  assign dataRam_3_addra = w_addr_3;
+  assign dataRam_3_dina = sData_payload;
+  assign dataRam_3_addrb = r_addr;
+  assign dataRam_4_wea = weav_4;
+  assign dataRam_4_addra = w_addr_4;
+  assign dataRam_4_dina = sData_payload;
+  assign dataRam_4_addrb = r_addr;
+  assign dataRam_5_wea = weav_5;
+  assign dataRam_5_addra = w_addr_5;
+  assign dataRam_5_dina = sData_payload;
+  assign dataRam_5_addrb = r_addr;
+  assign dataRam_6_wea = weav_6;
+  assign dataRam_6_addra = w_addr_6;
+  assign dataRam_6_dina = sData_payload;
+  assign dataRam_6_addrb = r_addr;
+  assign dataRam_7_wea = weav_7;
+  assign dataRam_7_addra = w_addr_7;
+  assign dataRam_7_dina = sData_payload;
+  assign dataRam_7_addrb = r_addr;
+  assign dataRam_8_wea = weav_8;
+  assign dataRam_8_addra = w_addr_8;
+  assign dataRam_8_dina = sData_payload;
+  assign dataRam_8_addrb = r_addr;
+  assign dataRam_9_wea = weav_9;
+  assign dataRam_9_addra = w_addr_9;
+  assign dataRam_9_dina = sData_payload;
+  assign dataRam_9_addrb = r_addr;
+  assign dataRam_10_wea = weav_10;
+  assign dataRam_10_addra = w_addr_10;
+  assign dataRam_10_dina = sData_payload;
+  assign dataRam_10_addrb = r_addr;
+  assign dataRam_11_wea = weav_11;
+  assign dataRam_11_addra = w_addr_11;
+  assign dataRam_11_dina = sData_payload;
+  assign dataRam_11_addrb = r_addr;
+  assign dataRam_12_wea = weav_12;
+  assign dataRam_12_addra = w_addr_12;
+  assign dataRam_12_dina = sData_payload;
+  assign dataRam_12_addrb = r_addr;
+  assign dataRam_13_wea = weav_13;
+  assign dataRam_13_addra = w_addr_13;
+  assign dataRam_13_dina = sData_payload;
+  assign dataRam_13_addrb = r_addr;
+  assign dataRam_14_wea = weav_14;
+  assign dataRam_14_addra = w_addr_14;
+  assign dataRam_14_dina = sData_payload;
+  assign dataRam_14_addrb = r_addr;
+  assign dataRam_15_wea = weav_15;
+  assign dataRam_15_addra = w_addr_15;
+  assign dataRam_15_dina = sData_payload;
+  assign dataRam_15_addrb = r_addr;
+  assign mData_fire = (mData_valid && mData_ready);
+  assign when_WaCounter_l12_7 = (channelOutCnt_count == _zz_when_WaCounter_l12_7);
+  always @(*) begin
+    if(when_WaCounter_l12_7) begin
+      channelOutCnt_valid = 1'b1;
+    end else begin
+      channelOutCnt_valid = 1'b0;
+    end
+  end
+
+  assign mData_fire_1 = (mData_valid && mData_ready);
+  assign when_WaCounter_l17_6 = (channelOutCnt_valid && mData_fire_1);
+  assign when_WaCounter_l12_8 = (colOutCnt_count == _zz_when_WaCounter_l12_8);
+  always @(*) begin
+    if(when_WaCounter_l12_8) begin
+      colOutCnt_valid = 1'b1;
+    end else begin
+      colOutCnt_valid = 1'b0;
+    end
+  end
+
+  assign mData_fire_2 = (mData_valid && mData_ready);
+  assign when_WaCounter_l17_7 = ((channelOutCnt_valid && colOutCnt_valid) && mData_fire_2);
+  assign when_WaCounter_l12_9 = (rowOutCnt_count == _zz_when_WaCounter_l12_9);
+  always @(*) begin
+    if(when_WaCounter_l12_9) begin
+      rowOutCnt_valid = 1'b1;
+    end else begin
+      rowOutCnt_valid = 1'b0;
+    end
+  end
+
+  assign last = ((channelOutCnt_valid && colOutCnt_valid) && rowOutCnt_valid);
+  assign dataArrangeFsm_arrangeEnd = (channel_cnt_valid && channel_offset_cnt_valid);
+  assign complete = ((channelOutCnt_valid && colOutCnt_valid) && rowOutCnt_valid);
+  assign when_DataArrange_l169 = ((dataArrangeFsm_currentState & DataArrangeEnum_IDLE) != 4'b0000);
+  always @(posedge clk or posedge reset) begin
+    if(reset) begin
+      dataArrangeFsm_currentState <= DataArrangeEnum_IDLE;
+      initCnt_count <= 3'b000;
+      channelCnt_count <= 8'h0;
+      colCnt_count <= 10'h0;
+      rowCnt_count <= 10'h0;
+      w_cnt_count <= 4'b0000;
+      w_addr_0 <= 12'h0;
+      w_addr_1 <= 12'h0;
+      w_addr_2 <= 12'h0;
+      w_addr_3 <= 12'h0;
+      w_addr_4 <= 12'h0;
+      w_addr_5 <= 12'h0;
+      w_addr_6 <= 12'h0;
+      w_addr_7 <= 12'h0;
+      w_addr_8 <= 12'h0;
+      w_addr_9 <= 12'h0;
+      w_addr_10 <= 12'h0;
+      w_addr_11 <= 12'h0;
+      w_addr_12 <= 12'h0;
+      w_addr_13 <= 12'h0;
+      w_addr_14 <= 12'h0;
+      w_addr_15 <= 12'h0;
+      r_addr <= 16'h0;
+      channel_cnt_count <= 16'h0;
+      channel_offset_cnt_count <= 12'h0;
+      channelOutCnt_count <= 8'h0;
+      colOutCnt_count <= 10'h0;
+      rowOutCnt_count <= 10'h0;
+    end else begin
+      if(softReset) begin
+      dataArrangeFsm_currentState <= DataArrangeEnum_IDLE;
+      initCnt_count <= 3'b000;
+      channelCnt_count <= 8'h0;
+      colCnt_count <= 10'h0;
+      rowCnt_count <= 10'h0;
+      w_cnt_count <= 4'b0000;
+      w_addr_0 <= 12'h0;
+      w_addr_1 <= 12'h0;
+      w_addr_2 <= 12'h0;
+      w_addr_3 <= 12'h0;
+      w_addr_4 <= 12'h0;
+      w_addr_5 <= 12'h0;
+      w_addr_6 <= 12'h0;
+      w_addr_7 <= 12'h0;
+      w_addr_8 <= 12'h0;
+      w_addr_9 <= 12'h0;
+      w_addr_10 <= 12'h0;
+      w_addr_11 <= 12'h0;
+      w_addr_12 <= 12'h0;
+      w_addr_13 <= 12'h0;
+      w_addr_14 <= 12'h0;
+      w_addr_15 <= 12'h0;
+      r_addr <= 16'h0;
+      channel_cnt_count <= 16'h0;
+      channel_offset_cnt_count <= 12'h0;
+      channelOutCnt_count <= 8'h0;
+      colOutCnt_count <= 10'h0;
+      rowOutCnt_count <= 10'h0;
+      end else begin
+        dataArrangeFsm_currentState <= dataArrangeFsm_nextState;
+        if(when_WaCounter_l17) begin
+          initCnt_count <= (initCnt_count + 3'b001);
+          if(initCnt_valid) begin
+            initCnt_count <= 3'b000;
+          end
+        end
+        if(when_WaCounter_l17_1) begin
+          channelCnt_count <= (channelCnt_count + 8'h01);
+          if(channelCnt_valid) begin
+            channelCnt_count <= 8'h0;
+          end
+        end
+        if(when_WaCounter_l17_2) begin
+          colCnt_count <= (colCnt_count + 10'h001);
+          if(colCnt_valid) begin
+            colCnt_count <= 10'h0;
+          end
+        end
+        if(when_WaCounter_l17_3) begin
+          rowCnt_count <= (rowCnt_count + 10'h001);
+          if(rowCnt_valid) begin
+            rowCnt_count <= 10'h0;
+          end
+        end
+        if(when_WaCounter_l17_4) begin
+          w_cnt_count <= (w_cnt_count + 4'b0001);
+          if(w_cnt_valid) begin
+            w_cnt_count <= 4'b0000;
+          end
+        end
+        if(weav_0) begin
+          if(when_DataArrange_l115) begin
+            w_addr_0 <= 12'h0;
+          end else begin
+            w_addr_0 <= (w_addr_0 + 12'h001);
+          end
+        end
+        if(weav_1) begin
+          if(when_DataArrange_l115_1) begin
+            w_addr_1 <= 12'h0;
+          end else begin
+            w_addr_1 <= (w_addr_1 + 12'h001);
+          end
+        end
+        if(weav_2) begin
+          if(when_DataArrange_l115_2) begin
+            w_addr_2 <= 12'h0;
+          end else begin
+            w_addr_2 <= (w_addr_2 + 12'h001);
+          end
+        end
+        if(weav_3) begin
+          if(when_DataArrange_l115_3) begin
+            w_addr_3 <= 12'h0;
+          end else begin
+            w_addr_3 <= (w_addr_3 + 12'h001);
+          end
+        end
+        if(weav_4) begin
+          if(when_DataArrange_l115_4) begin
+            w_addr_4 <= 12'h0;
+          end else begin
+            w_addr_4 <= (w_addr_4 + 12'h001);
+          end
+        end
+        if(weav_5) begin
+          if(when_DataArrange_l115_5) begin
+            w_addr_5 <= 12'h0;
+          end else begin
+            w_addr_5 <= (w_addr_5 + 12'h001);
+          end
+        end
+        if(weav_6) begin
+          if(when_DataArrange_l115_6) begin
+            w_addr_6 <= 12'h0;
+          end else begin
+            w_addr_6 <= (w_addr_6 + 12'h001);
+          end
+        end
+        if(weav_7) begin
+          if(when_DataArrange_l115_7) begin
+            w_addr_7 <= 12'h0;
+          end else begin
+            w_addr_7 <= (w_addr_7 + 12'h001);
+          end
+        end
+        if(weav_8) begin
+          if(when_DataArrange_l115_8) begin
+            w_addr_8 <= 12'h0;
+          end else begin
+            w_addr_8 <= (w_addr_8 + 12'h001);
+          end
+        end
+        if(weav_9) begin
+          if(when_DataArrange_l115_9) begin
+            w_addr_9 <= 12'h0;
+          end else begin
+            w_addr_9 <= (w_addr_9 + 12'h001);
+          end
+        end
+        if(weav_10) begin
+          if(when_DataArrange_l115_10) begin
+            w_addr_10 <= 12'h0;
+          end else begin
+            w_addr_10 <= (w_addr_10 + 12'h001);
+          end
+        end
+        if(weav_11) begin
+          if(when_DataArrange_l115_11) begin
+            w_addr_11 <= 12'h0;
+          end else begin
+            w_addr_11 <= (w_addr_11 + 12'h001);
+          end
+        end
+        if(weav_12) begin
+          if(when_DataArrange_l115_12) begin
+            w_addr_12 <= 12'h0;
+          end else begin
+            w_addr_12 <= (w_addr_12 + 12'h001);
+          end
+        end
+        if(weav_13) begin
+          if(when_DataArrange_l115_13) begin
+            w_addr_13 <= 12'h0;
+          end else begin
+            w_addr_13 <= (w_addr_13 + 12'h001);
+          end
+        end
+        if(weav_14) begin
+          if(when_DataArrange_l115_14) begin
+            w_addr_14 <= 12'h0;
+          end else begin
+            w_addr_14 <= (w_addr_14 + 12'h001);
+          end
+        end
+        if(weav_15) begin
+          if(when_DataArrange_l115_15) begin
+            w_addr_15 <= 12'h0;
+          end else begin
+            w_addr_15 <= (w_addr_15 + 12'h001);
+          end
+        end
+        if(r_en) begin
+          channel_cnt_count <= (channel_cnt_count + 16'h0001);
+          if(channel_cnt_valid) begin
+            channel_cnt_count <= 16'h0;
+          end
+        end
+        if(when_WaCounter_l17_5) begin
+          channel_offset_cnt_count <= (channel_offset_cnt_count + 12'h001);
+          if(channel_offset_cnt_valid) begin
+            channel_offset_cnt_count <= 12'h0;
+          end
+        end
+        if(when_DataArrange_l135) begin
+          r_addr <= 16'h0;
+        end else begin
+          if(when_DataArrange_l137) begin
+            r_addr <= {4'd0, _zz_r_addr};
+          end else begin
+            if(r_en) begin
+              r_addr <= (r_addr + _zz_r_addr_1);
+            end else begin
+              r_addr <= r_addr;
+            end
+          end
+        end
+        if(mData_fire) begin
+          channelOutCnt_count <= (channelOutCnt_count + 8'h01);
+          if(channelOutCnt_valid) begin
+            channelOutCnt_count <= 8'h0;
+          end
+        end
+        if(when_WaCounter_l17_6) begin
+          colOutCnt_count <= (colOutCnt_count + 10'h001);
+          if(colOutCnt_valid) begin
+            colOutCnt_count <= 10'h0;
+          end
+        end
+        if(when_WaCounter_l17_7) begin
+          rowOutCnt_count <= (rowOutCnt_count + 10'h001);
+          if(rowOutCnt_valid) begin
+            rowOutCnt_count <= 10'h0;
+          end
+        end
+        if(when_DataArrange_l169) begin
+          initCnt_count <= 3'b000;
+          channelCnt_count <= 8'h0;
+          colCnt_count <= 10'h0;
+          rowCnt_count <= 10'h0;
+          channel_cnt_count <= 16'h0;
+          w_cnt_count <= 4'b0000;
+          channel_offset_cnt_count <= 12'h0;
+        end
+      end
+    end
+  end
+
+  always @(posedge clk) begin
+    if(when_DataArrange_l77) begin
+      channelTimes <= (channelOut >>> 4);
+    end
+    if(when_DataArrange_l78) begin
+      colTimes <= colNumIn;
+    end
+    if(when_DataArrange_l79) begin
+      rowTimes <= rowNumIn;
+    end
+    r_en_delay_1 <= r_en;
+    r_en_delay_2 <= r_en_delay_1;
   end
 
 
@@ -36520,6 +37989,282 @@ module ChannelIncr (
 
 endmodule
 
+//sdpram_147 replaced by sdpram_147
+
+//sdpram_147 replaced by sdpram_147
+
+//sdpram_147 replaced by sdpram_147
+
+//sdpram_147 replaced by sdpram_147
+
+//sdpram_147 replaced by sdpram_147
+
+//sdpram_147 replaced by sdpram_147
+
+//sdpram_147 replaced by sdpram_147
+
+//sdpram_147 replaced by sdpram_147
+
+//sdpram_147 replaced by sdpram_147
+
+//sdpram_147 replaced by sdpram_147
+
+//sdpram_147 replaced by sdpram_147
+
+//sdpram_147 replaced by sdpram_147
+
+//sdpram_147 replaced by sdpram_147
+
+//sdpram_147 replaced by sdpram_147
+
+//sdpram_147 replaced by sdpram_147
+
+module sdpram_147 (
+  output     [7:0]    doutb,
+  input      [11:0]   addra,
+  input      [15:0]   addrb,
+  input      [127:0]  dina,
+  input               ena,
+  input               enb,
+  input      [0:0]    wea,
+  input               clk
+);
+
+  wire       [7:0]    temp_doutb;
+  wire                injectdbiterra;
+  wire                injectsbiterra;
+  wire                regceb;
+  wire                rstb;
+  wire                sleep;
+
+  xpm_memory_sdpram #(
+    .ADDR_WIDTH_A(12),
+    .ADDR_WIDTH_B(16),
+    .AUTO_SLEEP_TIME(0),
+    .BYTE_WRITE_WIDTH_A(128),
+    .CASCADE_HEIGHT(0),
+    .CLOCKING_MODE("common_clock"),
+    .ECC_MODE("no_ecc"),
+    .MEMORY_INIT_FILE("none"),
+    .MEMORY_INIT_PARAM("0"),
+    .MEMORY_OPTIMIZATION("true"),
+    .MEMORY_PRIMITIVE("block"),
+    .MEMORY_SIZE(409600),
+    .MESSAGE_CONTROL(0),
+    .READ_DATA_WIDTH_B(8),
+    .READ_LATENCY_B(2),
+    .READ_RESET_VALUE_B("0"),
+    .RST_MODE_A("SYNC"),
+    .RST_MODE_B("SYNC"),
+    .SIM_ASSERT_CHK(0),
+    .USE_EMBEDDED_CONSTRAINT(0),
+    .USE_MEM_INIT(1),
+    .WAKEUP_TIME("disable_sleep"),
+    .WRITE_DATA_WIDTH_A(128),
+    .WRITE_MODE_B("read_first"),
+    .USE_MEM_INIT_MMI(0),
+    .WRITE_PROTECT(1)
+  ) temp (
+    .doutb          (temp_doutb[7:0]), //o
+    .addra          (addra[11:0]    ), //i
+    .addrb          (addrb[15:0]    ), //i
+    .clka           (clk            ), //i
+    .clkb           (clk            ), //i
+    .dina           (dina[127:0]    ), //i
+    .ena            (ena            ), //i
+    .enb            (enb            ), //i
+    .injectdbiterra (injectdbiterra ), //i
+    .injectsbiterra (injectsbiterra ), //i
+    .regceb         (regceb         ), //i
+    .rstb           (rstb           ), //i
+    .sleep          (sleep          ), //i
+    .wea            (wea            )  //i
+  );
+  assign injectdbiterra = 1'b0;
+  assign injectsbiterra = 1'b0;
+  assign regceb = 1'b1;
+  assign rstb = 1'b0;
+  assign sleep = 1'b0;
+  assign doutb = temp_doutb;
+
+endmodule
+
+module StreamFifo_1 (
+  input               io_push_valid,
+  output              io_push_ready,
+  input      [127:0]  io_push_payload,
+  output              io_pop_valid,
+  input               io_pop_ready,
+  output     [127:0]  io_pop_payload,
+  input               io_flush,
+  output reg [3:0]    io_availability,
+  input               clk,
+  input               reset,
+  input               softReset
+);
+
+  reg        [127:0]  _zz_logic_ram_port0;
+  wire       [3:0]    _zz_logic_pushPtr_valueNext;
+  wire       [0:0]    _zz_logic_pushPtr_valueNext_1;
+  wire       [3:0]    _zz_logic_popPtr_valueNext;
+  wire       [0:0]    _zz_logic_popPtr_valueNext_1;
+  wire                _zz_logic_ram_port;
+  wire                _zz_io_pop_payload;
+  wire       [127:0]  _zz_logic_ram_port_1;
+  wire       [3:0]    _zz_io_availability;
+  wire       [3:0]    _zz_io_availability_1;
+  wire       [3:0]    _zz_io_availability_2;
+  reg                 _zz_1;
+  reg                 logic_pushPtr_willIncrement;
+  reg                 logic_pushPtr_willClear;
+  reg        [3:0]    logic_pushPtr_valueNext;
+  reg        [3:0]    logic_pushPtr_value;
+  wire                logic_pushPtr_willOverflowIfInc;
+  wire                logic_pushPtr_willOverflow;
+  reg                 logic_popPtr_willIncrement;
+  reg                 logic_popPtr_willClear;
+  reg        [3:0]    logic_popPtr_valueNext;
+  reg        [3:0]    logic_popPtr_value;
+  wire                logic_popPtr_willOverflowIfInc;
+  wire                logic_popPtr_willOverflow;
+  wire                logic_ptrMatch;
+  reg                 logic_risingOccupancy;
+  wire                logic_pushing;
+  wire                logic_popping;
+  wire                logic_empty;
+  wire                logic_full;
+  reg                 _zz_io_pop_valid;
+  wire                when_Stream_l1075;
+  reg [127:0] logic_ram [0:9];
+
+  assign _zz_logic_pushPtr_valueNext_1 = logic_pushPtr_willIncrement;
+  assign _zz_logic_pushPtr_valueNext = {3'd0, _zz_logic_pushPtr_valueNext_1};
+  assign _zz_logic_popPtr_valueNext_1 = logic_popPtr_willIncrement;
+  assign _zz_logic_popPtr_valueNext = {3'd0, _zz_logic_popPtr_valueNext_1};
+  assign _zz_io_availability = (4'b1010 + _zz_io_availability_1);
+  assign _zz_io_availability_1 = (logic_popPtr_value - logic_pushPtr_value);
+  assign _zz_io_availability_2 = (logic_popPtr_value - logic_pushPtr_value);
+  assign _zz_io_pop_payload = 1'b1;
+  assign _zz_logic_ram_port_1 = io_push_payload;
+  always @(posedge clk) begin
+    if(_zz_io_pop_payload) begin
+      _zz_logic_ram_port0 <= logic_ram[logic_popPtr_valueNext];
+    end
+  end
+
+  always @(posedge clk) begin
+    if(_zz_1) begin
+      logic_ram[logic_pushPtr_value] <= _zz_logic_ram_port_1;
+    end
+  end
+
+  always @(*) begin
+    _zz_1 = 1'b0;
+    if(logic_pushing) begin
+      _zz_1 = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    logic_pushPtr_willIncrement = 1'b0;
+    if(logic_pushing) begin
+      logic_pushPtr_willIncrement = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    logic_pushPtr_willClear = 1'b0;
+    if(io_flush) begin
+      logic_pushPtr_willClear = 1'b1;
+    end
+  end
+
+  assign logic_pushPtr_willOverflowIfInc = (logic_pushPtr_value == 4'b1001);
+  assign logic_pushPtr_willOverflow = (logic_pushPtr_willOverflowIfInc && logic_pushPtr_willIncrement);
+  always @(*) begin
+    if(logic_pushPtr_willOverflow) begin
+      logic_pushPtr_valueNext = 4'b0000;
+    end else begin
+      logic_pushPtr_valueNext = (logic_pushPtr_value + _zz_logic_pushPtr_valueNext);
+    end
+    if(logic_pushPtr_willClear) begin
+      logic_pushPtr_valueNext = 4'b0000;
+    end
+  end
+
+  always @(*) begin
+    logic_popPtr_willIncrement = 1'b0;
+    if(logic_popping) begin
+      logic_popPtr_willIncrement = 1'b1;
+    end
+  end
+
+  always @(*) begin
+    logic_popPtr_willClear = 1'b0;
+    if(io_flush) begin
+      logic_popPtr_willClear = 1'b1;
+    end
+  end
+
+  assign logic_popPtr_willOverflowIfInc = (logic_popPtr_value == 4'b1001);
+  assign logic_popPtr_willOverflow = (logic_popPtr_willOverflowIfInc && logic_popPtr_willIncrement);
+  always @(*) begin
+    if(logic_popPtr_willOverflow) begin
+      logic_popPtr_valueNext = 4'b0000;
+    end else begin
+      logic_popPtr_valueNext = (logic_popPtr_value + _zz_logic_popPtr_valueNext);
+    end
+    if(logic_popPtr_willClear) begin
+      logic_popPtr_valueNext = 4'b0000;
+    end
+  end
+
+  assign logic_ptrMatch = (logic_pushPtr_value == logic_popPtr_value);
+  assign logic_pushing = (io_push_valid && io_push_ready);
+  assign logic_popping = (io_pop_valid && io_pop_ready);
+  assign logic_empty = (logic_ptrMatch && (! logic_risingOccupancy));
+  assign logic_full = (logic_ptrMatch && logic_risingOccupancy);
+  assign io_push_ready = (! logic_full);
+  assign io_pop_valid = ((! logic_empty) && (! (_zz_io_pop_valid && (! logic_full))));
+  assign io_pop_payload = _zz_logic_ram_port0;
+  assign when_Stream_l1075 = (logic_pushing != logic_popping);
+  always @(*) begin
+    if(logic_ptrMatch) begin
+      io_availability = (logic_risingOccupancy ? 4'b0000 : 4'b1010);
+    end else begin
+      io_availability = ((logic_popPtr_value < logic_pushPtr_value) ? _zz_io_availability : _zz_io_availability_2);
+    end
+  end
+
+  always @(posedge clk or posedge reset) begin
+    if(reset) begin
+      logic_pushPtr_value <= 4'b0000;
+      logic_popPtr_value <= 4'b0000;
+      logic_risingOccupancy <= 1'b0;
+      _zz_io_pop_valid <= 1'b0;
+    end else begin
+      if(softReset) begin
+      logic_pushPtr_value <= 4'b0000;
+      logic_popPtr_value <= 4'b0000;
+      logic_risingOccupancy <= 1'b0;
+      _zz_io_pop_valid <= 1'b0;
+      end else begin
+        logic_pushPtr_value <= logic_pushPtr_valueNext;
+        logic_popPtr_value <= logic_popPtr_valueNext;
+        _zz_io_pop_valid <= (logic_popPtr_valueNext == logic_pushPtr_value);
+        if(when_Stream_l1075) begin
+          logic_risingOccupancy <= logic_pushing;
+        end
+        if(io_flush) begin
+          logic_risingOccupancy <= 1'b0;
+        end
+      end
+    end
+  end
+
+
+endmodule
+
 module WaStreamFifoPipe (
   input               push_valid,
   output              push_ready,
@@ -47883,10 +49628,11 @@ module FeatureConv11Convert (
   reg        [11:0]   channelCnt_count;
   reg                 channelCnt_valid;
   wire                when_WaCounter_l12_1;
+  wire                when_WaCounter_l17_1;
   reg        [9:0]    columnCnt_count;
   reg                 columnCnt_valid;
   wire                when_WaCounter_l12_2;
-  wire                when_WaCounter_l17_1;
+  wire                when_WaCounter_l17_2;
   reg        [9:0]    rowCnt_count;
   reg                 rowCnt_valid;
   wire                when_WaCounter_l12_3;
@@ -47995,6 +49741,7 @@ module FeatureConv11Convert (
     end
   end
 
+  assign when_WaCounter_l17_1 = (io_sData_fire && channelCnt_valid);
   assign when_WaCounter_l12_2 = (columnCnt_count == _zz_when_WaCounter_l12_2);
   always @(*) begin
     if(when_WaCounter_l12_2) begin
@@ -48004,7 +49751,7 @@ module FeatureConv11Convert (
     end
   end
 
-  assign when_WaCounter_l17_1 = ((fsm_currentState & FeatureWidthConvertEnum_END_1) != 5'b00000);
+  assign when_WaCounter_l17_2 = ((fsm_currentState & FeatureWidthConvertEnum_END_1) != 5'b00000);
   assign when_WaCounter_l12_3 = (rowCnt_count == _zz_when_WaCounter_l12_3);
   always @(*) begin
     if(when_WaCounter_l12_3) begin
@@ -48081,13 +49828,13 @@ module FeatureConv11Convert (
             channelCnt_count <= 12'h0;
           end
         end
-        if(channelCnt_valid) begin
+        if(when_WaCounter_l17_1) begin
           columnCnt_count <= (columnCnt_count + 10'h001);
           if(columnCnt_valid) begin
             columnCnt_count <= 10'h0;
           end
         end
-        if(when_WaCounter_l17_1) begin
+        if(when_WaCounter_l17_2) begin
           rowCnt_count <= (rowCnt_count + 10'h001);
           if(rowCnt_valid) begin
             rowCnt_count <= 10'h0;
@@ -48165,10 +49912,11 @@ module FeatureWidthConvert (
   reg        [11:0]   channelCnt_count;
   reg                 channelCnt_valid;
   wire                when_WaCounter_l12_1;
+  wire                when_WaCounter_l17_1;
   reg        [9:0]    columnCnt_count;
   reg                 columnCnt_valid;
   wire                when_WaCounter_l12_2;
-  wire                when_WaCounter_l17_1;
+  wire                when_WaCounter_l17_2;
   reg        [9:0]    rowCnt_count;
   reg                 rowCnt_valid;
   wire                when_WaCounter_l12_3;
@@ -48288,6 +50036,7 @@ module FeatureWidthConvert (
     end
   end
 
+  assign when_WaCounter_l17_1 = (dataCvt_mData_fire && channelCnt_valid);
   assign when_WaCounter_l12_2 = (columnCnt_count == _zz_when_WaCounter_l12_2);
   always @(*) begin
     if(when_WaCounter_l12_2) begin
@@ -48297,7 +50046,7 @@ module FeatureWidthConvert (
     end
   end
 
-  assign when_WaCounter_l17_1 = ((fsm_currentState & FeatureWidthConvertEnum_END_1) != 5'b00000);
+  assign when_WaCounter_l17_2 = ((fsm_currentState & FeatureWidthConvertEnum_END_1) != 5'b00000);
   assign when_WaCounter_l12_3 = (rowCnt_count == _zz_when_WaCounter_l12_3);
   always @(*) begin
     if(when_WaCounter_l12_3) begin
@@ -48375,13 +50124,13 @@ module FeatureWidthConvert (
             channelCnt_count <= 12'h0;
           end
         end
-        if(channelCnt_valid) begin
+        if(when_WaCounter_l17_1) begin
           columnCnt_count <= (columnCnt_count + 10'h001);
           if(columnCnt_valid) begin
             columnCnt_count <= 10'h0;
           end
         end
-        if(when_WaCounter_l17_1) begin
+        if(when_WaCounter_l17_2) begin
           rowCnt_count <= (rowCnt_count + 10'h001);
           if(rowCnt_valid) begin
             rowCnt_count <= 10'h0;
