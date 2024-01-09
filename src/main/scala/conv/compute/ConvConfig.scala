@@ -61,6 +61,6 @@ case class ConvConfig(DATA_WIDTH: Int, COMPUTE_CHANNEL_IN_NUM: Int, COMPUTE_CHAN
     //如640*640*32 --》 640*640*64
     val strideFifoDepth = FEATURE_RAM_DEPTH << 1
 
-    val dataArrangeDepth = 80 * 80 * 128 / COMPUTE_CHANNEL_OUT_NUM / COMPUTE_CHANNEL_OUT_NUM
+    //val dataArrangeDepth = 80 * 80 * 128 / COMPUTE_CHANNEL_OUT_NUM / COMPUTE_CHANNEL_OUT_NUM
 
 }

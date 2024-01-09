@@ -39,8 +39,6 @@ class ConvCompute(convConfig: ConvConfig) extends Component {
         val last = out Bool()
         val softReset = in Bool()
         val amendReg = in Bits (32 bits)
-
-        val enArrange = in Bool()
     }
     noIoPrefix()
     ClockDomain(clock = this.clockDomain.clock, reset = this.clockDomain.reset, softReset = io.softReset) {
@@ -120,10 +118,14 @@ class ConvCompute(convConfig: ConvConfig) extends Component {
         val featureFifo = Array.tabulate(convConfig.KERNEL_NUM) { i =>
             def gen: WaXpmSyncFifo = {
                 val fifo = WaXpmSyncFifo(XPM_FIFO_SYNC_CONFIG(MEM_TYPE.block, 0, FIFO_READ_MODE.fwft, convConfig.FEATURE_RAM_DEPTH, convConfig.FEATURE_S_DATA_WIDTH, convConfig.FEATURE_S_DATA_WIDTH))
-
+                //val fifo = WaStreamFifo(UInt(convConfig.FEATURE_S_DATA_WIDTH bits), convConfig.FEATURE_RAM_DEPTH, computeCtrl.io.mCount, computeCtrl.io.sCount, sReady(i), mReady(i))
                 if (convConfig.KERNEL_NUM == 9) {
                     fifo.dataIn <> dataGenerate.io.mData.mData(i)
                 }
+                //            else {
+                //                fifo.dataIn <> io.sFeatureData
+                //            }
+                //fifo.io.pop.valid <> computeCtrl.io.featureMemWriteValid
                 fifo.rd_en <> computeCtrl.io.featureMemWriteReady
                 fifo.sCount <> computeCtrl.io.sCount.resized
                 fifo.mCount <> computeCtrl.io.mCount.resized
@@ -131,17 +133,25 @@ class ConvCompute(convConfig: ConvConfig) extends Component {
                 fifo.mReady <> mReady(i)
                 fifo
             }
+
             gen
         }
 
         val featureMemOutData = Vec(UInt(convConfig.FEATURE_S_DATA_WIDTH bits), convConfig.KERNEL_NUM)
         val featureMem = Array.tabulate(convConfig.KERNEL_NUM) { i =>
             def gen = {
-
+                //            val mem = new sdpram(convConfig.FEATURE_S_DATA_WIDTH,convConfig.FEATURE_MEM_DEPTH,convConfig.FEATURE_S_DATA_WIDTH,convConfig.FEATURE_MEM_DEPTH,MEM_TYPE.distributed,0,CLOCK_MODE.common_clock,this.clockDomain,this.clockDomain)
+                //            mem.io.wea <> B"1'b1"
+                //            mem.io.ena := featureFifo(i).rd_en
+                //            mem.io.dina <> featureFifo(i).dout.asBits
+                //            mem.io.addra <> computeCtrl.io.featureMemWriteAddr.asBits
+                //            featureMemOutData(i) := mem.io.doutb.asUInt
+                //            mem.io.addrb <> computeCtrl.io.featureMemReadAddr.asBits
+                //            mem.io.enb <> True
                 val mem = new Mem(UInt(convConfig.FEATURE_S_DATA_WIDTH bits), wordCount = convConfig.FEATURE_MEM_DEPTH).addAttribute("ram_style = \"block\"")
                 mem.write(computeCtrl.io.featureMemWriteAddr, featureFifo(i).dout, featureFifo(i).rd_en)
-                //将fifo中的数据写入mem
-                if (useUram) {    //useUram = true
+                //                featureMemOutData(i) := mem.readAsync(computeCtrl.io.featureMemReadAddr)
+                if (useUram) {
                     featureMemOutData(i) := Delay(mem.readSync(computeCtrl.io.featureMemReadAddr), 10)
                 } else {
                     featureMemOutData(i) := mem.readSync(computeCtrl.io.featureMemReadAddr)
@@ -247,35 +257,14 @@ class ConvCompute(convConfig: ConvConfig) extends Component {
         stride.io.enStride <> io.enStride
         stride.io.sData.valid <> computeCtrl.io.mDataValid
         stride.io.sData.payload <> quan.io.dataOut
+        stride.io.mData <> io.mFeatureData
         stride.io.channelOut <> io.channelOut
         stride.io.colNumIn <> io.colNumIn
         stride.io.rowNumIn <> io.rowNumIn
         stride.io.sReady <> computeCtrl.io.mDataReady
+        stride.io.complete <> io.computeComplete
         stride.io.start <> io.startCu
-
-        val dataArrange = new DataArrange(convConfig)
-        dataArrange.io.start      <> io.startCu
-        dataArrange.io.enArrange  <> io.enArrange
-        dataArrange.io.sData.payload    <> stride.io.mData.payload
-        dataArrange.io.sData.valid      <> stride.io.mData.valid
-        dataArrange.io.channelOut <> io.channelOut
-        dataArrange.io.colNumIn <> io.colNumIn
-        dataArrange.io.rowNumIn <> io.rowNumIn
-
-        when(io.enArrange){
-            dataArrange.io.complete <> io.computeComplete
-            dataArrange.io.last     <> io.last
-            dataArrange.io.mData    <> io.mFeatureData
-            dataArrange.io.sData.ready  <> stride.io.mData.ready
-        }otherwise({
-            stride.io.complete  <> io.computeComplete
-            stride.io.last      <> io.last
-            stride.io.mData     <> io.mFeatureData
-
-            dataArrange.io.mData.ready  := True
-        })
-
-
+        stride.io.last <> io.last
     }
 
 
